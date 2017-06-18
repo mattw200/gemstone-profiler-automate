@@ -1,0 +1,68 @@
+Directory	Command	Name
+/home/odroid/Workloads-ARMv7/	sleep 30	idle
+/home/odroid/Workloads-ARMv7/mibench-armv7/automotive/basicmath/	./basicmath_large > output_large.txt	basicmath
+/home/odroid/Workloads-ARMv7/mibench-armv7/automotive/bitcount/	./bitcnts 1125000 > output_large.txt	bitcount
+/home/odroid/Workloads-ARMv7/mibench-armv7/automotive/qsort/	./qsort_large input_large.dat > output_large.txt	qsort
+/home/odroid/Workloads-ARMv7/mibench-armv7/automotive/susan/	./susan input_large.pgm output_large.smoothing.pgm -s 	susan-smoothing
+/home/odroid/Workloads-ARMv7/mibench-armv7/automotive/susan/	./susan input_large.pgm output_large.edges.pgm -e 	susan-edges
+/home/odroid/Workloads-ARMv7/mibench-armv7/automotive/susan/	./susan input_large.pgm output_large.corners.pgm -c 	susan-corners
+/home/odroid/Workloads-ARMv7/mibench-armv7/consumer/jpeg/	jpeg-6a/cjpeg -dct int -progressive -opt -outfile output_large_encode.jpeg input_large.ppm	jpeg-encode
+/home/odroid/Workloads-ARMv7/mibench-armv7/consumer/jpeg/	jpeg-6a/djpeg -dct int -ppm -outfile output_large_decode.ppm input_large.jpg 	jpeg-decode
+/home/odroid/Workloads-ARMv7/mibench-armv7/consumer/typeset/	lout-3.24/lout -I lout-3.24/include -D lout-3.24/data -F lout-3.24/font -C lout-3.24/maps -H lout-3.24/hyph large.lout > output_large.ps 	typeset
+/home/odroid/Workloads-ARMv7/mibench-armv7/network/dijkstra/	./dijkstra_large input.dat > output_large.dat 	dijkstra
+/home/odroid/Workloads-ARMv7/mibench-armv7/network/patricia/	./patricia large.udp > output_large.txt 	patricia
+/home/odroid/Workloads-ARMv7/mibench-armv7/office/stringsearch/	./search_large > output_large.txt	stringsearch
+/home/odroid/Workloads-ARMv7/mibench-armv7/security/blowfish/	./bf e input_large.asc output_large.enc 1234567890abcdeffedcba0987654321	blowfish-encode
+/home/odroid/Workloads-ARMv7/mibench-armv7/security/blowfish/	./bf d output_large.enc output_large.asc 1234567890abcdeffedcba0987654321	blowfish-decode
+/home/odroid/Workloads-ARMv7/mibench-armv7/security/sha/	./sha input_large.asc > output_large.txt	sha
+/home/odroid/Workloads-ARMv7/mibench-armv7/telecomm/adpcm/	bin/rawcaudio < data/large.pcm > output_large.adpcm	adpcm-encode
+/home/odroid/Workloads-ARMv7/mibench-armv7/telecomm/adpcm/	bin/rawdaudio < data/large.adpcm > output_large.pcm	adpmc-decode
+/home/odroid/Workloads-ARMv7/mibench-armv7/telecomm/CRC32/	./crc ../adpcm/data/large.pcm > output_large.txt	crc32
+/home/odroid/Workloads-ARMv7/mibench-armv7/telecomm/FFT/	./fft 8 32768 > output_large.txt	fft
+/home/odroid/Workloads-ARMv7/mibench-armv7/telecomm/FFT/	./fft 8 32768 -i > output_large.inv.txt	inv-fft
+/home/odroid/Workloads-ARMv7/mibench-armv7/telecomm/gsm/	bin/toast -fps -c data/large.au > output_large.encode.gsm 	gsm-encode
+/home/odroid/Workloads-ARMv7/mibench-armv7/telecomm/gsm/	bin/untoast -fps -c data/large.au.run.gsm > output_large.decode.run	gsm-decode
+/home/odroid/Workloads-ARMv7/parmibench-armv7/Products/Automotive/basicmath/	./parallel_basicmath 2 4 2	par-basicmath-square
+/home/odroid/Workloads-ARMv7/parmibench-armv7/Products/Automotive/basicmath/	./parallel_basicmath 1 4 2	par-basicmath-cubic
+/home/odroid/Workloads-ARMv7/parmibench-armv7/Products/Automotive/basicmath/	./parallel_basicmath 5 4 2	par-basicmath-rad2deg
+/home/odroid/Workloads-ARMv7/parmibench-armv7/Products/Automotive/Bitcount/Parallel/	./bitcnts_parallel 2147483647 > output.dat 	par-bitcount
+/home/odroid/Workloads-ARMv7/parmibench-armv7/Products/Automotive/Susan/Parallel/	./susan_parallel input_large.pgm output_large.smoothing.pgm -s 	par-susan-smoothing
+/home/odroid/Workloads-ARMv7/parmibench-armv7/Products/Automotive/Susan/Parallel/	./susan_parallel input_large.pgm output_large.edges.pgm -e 	par-susan-edges
+/home/odroid/Workloads-ARMv7/parmibench-armv7/Products/Automotive/Susan/Parallel/	./susan_parallel input_large.pgm output_large.corners.pgm -c 	par-susan-corners
+/home/odroid/Workloads-ARMv7/parmibench-armv7/Products/Network/Dijkstra/Parallel/	./dijkstra_parallel_mqueue input_large.dat > output_large_m.dat 	par-dijkstra-mqueue
+/home/odroid/Workloads-ARMv7/parmibench-armv7/Products/Network/Dijkstra/Parallel/	./dijkstra_parallel_squeue input_large.dat > output_large_s.dat 	par-dijkstra-squeue
+/home/odroid/Workloads-ARMv7/parmibench-armv7/Products/Network/Dijkstra/Parallel/	./dijkstra_allpair spf.dat > output_large.dat 	par-dijkstra-allpair
+/home/odroid/Workloads-ARMv7/parmibench-armv7/Products/Network/Patricia/Parallel/	./patricia_parallel input.dat > output.dat	par-patricia
+/home/odroid/Workloads-ARMv7/parmibench-armv7/Products/Office/stringsearch/	./parallel_stringsearch  4 1 testdata/SearchString32.txt testdata/testpattern5.txt	par-stringsearch
+/home/odroid/Workloads-ARMv7/parmibench-armv7/Products/Security/sha/	./sha -P -4 	par-sha
+/home/odroid/Workloads-ARMv7/lmbench3-armv7/lmbench3/bin/armv7l-linux-gnu/	./lat_ctx -s 0 18	lmb3-lat-ctx-0-18
+/home/odroid/Workloads-ARMv7/lmbench3-armv7/lmbench3/bin/armv7l-linux-gnu/	./lat_ctx -s 500 18	lmb3-lat-ctx-500-18
+/home/odroid/Workloads-ARMv7/lmbench3-armv7/lmbench3/bin/armv7l-linux-gnu/	./lat_fs	lmb3-lat-fs
+/home/odroid/Workloads-ARMv7/lmbench3-armv7/lmbench3/bin/armv7l-linux-gnu/	./lat_pagefault -P 20 -N 1 IMG_2118.mp4	lmb3-lat-pagefault
+/home/odroid/Workloads-ARMv7/lmbench3-armv7/lmbench3/bin/armv7l-linux-gnu/	./lat_mem_rd 1 8	lmb3-lat-mem-rd-1-8
+/home/odroid/Workloads-ARMv7/lmbench3-armv7/lmbench3/bin/armv7l-linux-gnu/	./lat_mem_rd 1 256	lmb3-lat-mem-rd-1-256
+/home/odroid/Workloads-ARMv7/lmbench3-armv7/lmbench3/bin/armv7l-linux-gnu/	./lat_mem_rd 20 8	lmb3-lat-mem-rd-20-8
+/home/odroid/Workloads-ARMv7/lmbench3-armv7/lmbench3/bin/armv7l-linux-gnu/	./lat_mem_rd 20 256	lmb3-lat-mem-rd-20-256
+/home/odroid/Workloads-ARMv7/lmbench3-armv7/lmbench3/bin/armv7l-linux-gnu/	./lat_mem_rd -P 4 2	lmb3-lat-mem-rd-p4
+/home/odroid/Workloads-ARMv7/lmbench3-armv7/lmbench3/bin/armv7l-linux-gnu/	./lat_ops -N 20	lmb3-lat-ops
+/home/odroid/Workloads-ARMv7/lmbench3-armv7/lmbench3/bin/armv7l-linux-gnu/	./lat_proc fork	lmb3-pat-proc-fork
+/home/odroid/Workloads-ARMv7/lmbench3-armv7/lmbench3/bin/armv7l-linux-gnu/	./bw_mem 200m rd	lmb3-bw-mem-200m-rd
+/home/odroid/Workloads-ARMv7/lmbench3-armv7/lmbench3/bin/armv7l-linux-gnu/	./bw_mem 200m wr	lmb3-bw-mem-200m-wr
+/home/odroid/Workloads-ARMv7/lmbench3-armv7/lmbench3/bin/armv7l-linux-gnu/	./bw_mem 200m cp	lmb3-bw-mem-200m-cp
+/home/odroid/Workloads-ARMv7/lmbench3-armv7/lmbench3/bin/armv7l-linux-gnu/	./bw_mem 700m cp	lmb3-bw-mem-700m-cp
+/home/odroid/Workloads-ARMv7/lmbench3-armv7/lmbench3/bin/armv7l-linux-gnu/	./bw_mem 2000m cp	lmb3-bw-mem-2000m-cp
+/home/odroid/Workloads-ARMv7/lmbench3-armv7/lmbench3/bin/armv7l-linux-gnu/	./tlb	lmb3-tlb
+/home/odroid/Workloads-ARMv7/lmbench3-armv7/lmbench3/bin/armv7l-linux-gnu/	./line	lmb3-line
+/home/odroid/Workloads-ARMv7/lmbench3-armv7/lmbench3/bin/armv7l-linux-gnu/	./par_mem	lmb3-par-mem
+/home/odroid/Workloads-ARMv7/roy-longbottom-armv7/Raspberry_Pi_Benchmarks/bin-armv7	./rl-busspeed	rl-busspeed
+/home/odroid/Workloads-ARMv7/roy-longbottom-armv7/Raspberry_Pi_Benchmarks/bin-armv7	./rl-dhrystone	rl-dhrystone
+/home/odroid/Workloads-ARMv7/roy-longbottom-armv7/Raspberry_Pi_Benchmarks/bin-armv7	./rl-linpack	rl-linpack
+/home/odroid/Workloads-ARMv7/roy-longbottom-armv7/Raspberry_Pi_Benchmarks/bin-armv7	./rl-linpack-FSSP	rl-linpack-FSSP
+/home/odroid/Workloads-ARMv7/roy-longbottom-armv7/Raspberry_Pi_Benchmarks/bin-armv7	./rl-linpack-neon	rl-linpack-neon
+/home/odroid/Workloads-ARMv7/roy-longbottom-armv7/Raspberry_Pi_Benchmarks/bin-armv7	./rl-liverloops-2	rl-liverloops-2
+/home/odroid/Workloads-ARMv7/roy-longbottom-armv7/Raspberry_Pi_Benchmarks/bin-armv7	./rl-mem-spd-neon	rl-mem-spd-neon
+/home/odroid/Workloads-ARMv7/roy-longbottom-armv7/Raspberry_Pi_Benchmarks/bin-armv7	./rl-neon-speed	rl-neon-speed
+/home/odroid/Workloads-ARMv7/roy-longbottom-armv7/Raspberry_Pi_Benchmarks/bin-armv7	./rl-whetstone	rl-whetstone
+/home/odroid/Workloads-ARMv7/parsec-3.0/parsec-3.0/pkgs/apps/blackscholes/src/	./blackscholes-seq 1 ../inputs/in_4K.txt out.txt	parsec-blackscholes-seq
+/home/odroid/Workloads-ARMv7/parsec-3.0/parsec-3.0/pkgs/apps/fluidanimate/src/	./fluidanimate 1 1 ../inputs/in_35K.fluid	parsec-fluid-seq
+/home/odroid/Workloads-ARMv7/parsec-3.0/parsec-3.0/pkgs/apps/swaptions/src/	./swaptions -ns 2000 -sm 2 -nt 1 -sd 54	parsec-swaptions-seq
