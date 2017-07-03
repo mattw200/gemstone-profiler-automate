@@ -6,10 +6,22 @@
 import sys
 import os
 import pandas as pd
+import threading
 
 experiment_number_filename = 'experiment-number.txt'
 script_path = os.path.dirname(__file__)
 experiment_number_path = os.path.join(script_path, experiment_number_filename)
+
+class ContinuousLogging(threading.Thread): 
+    def __init__(self, threadID, experiment_directory, time_period_us):
+        threading.Thread.__init__(self)
+        self.threadID = threadID
+        self.experiment_directory = experiment_directory
+        self.time_period_us = time_period_us
+    def run(self):
+        print ("Starting thread: "+str(self.threadID))
+        os.system('sudo ./bin/pmc-run '+str(self.time_period_us)+' > ' \
+                +self.experiment_directory+'/pmc-log.out')
 
 def set_frequency(freq_mhz):
     res = int(os.sysconf('SC_NPROCESSORS_ONLN'))
@@ -33,9 +45,12 @@ def run_experiment(freq_mhz, core_mask, workloads_config):
     experiment_directory = 'powmon-experiment-{0:0>3}'.format(experiment_num)
     if not os.path.exists(experiment_directory):
         os.makedirs(experiment_directory)    
-    os.system('bin/pmc-setup')
-    os.system('bin/pmc-get-header > '+experiment_directory+'/pmc-events.out')
-    os.system('bin/pmc-get-header > '+experiment_directory+'/pmc-log.out')
+    os.system('sudo bin/pmc-setup')
+    os.system('sudo bin/pmc-get-header > '+experiment_directory \
+            +'/pmc-events.out')
+    loggingThread = ContinuousLogging(0, experiment_directory, 200000)
+    loggingThread.start()
+    #os.system('bin/pmc-get-header > '+experiment_directory+'/pmc-log.out')
     set_frequency(freq_mhz)
     # open workloads config file
     workloads_df = pd.read_csv(workloads_config, sep='\t')
@@ -59,6 +74,10 @@ def run_experiment(freq_mhz, core_mask, workloads_config):
             os.system('bash temp_shell.sh')
         finally:
             os.chdir(owd)
+    print ("Waiting for logging thread to finish")
+    os.system("echo '0' | sudo tee PMC_RUN_CHECK") # Stop data logging
+    loggingThread.join()
+    #os.system('sudo ./bin/pmc-run > '+experiment_directory+'/pmc-log.out')
 
 if __name__ == "__main__":
     import argparse
