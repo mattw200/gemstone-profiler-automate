@@ -12,6 +12,9 @@ experiment_number_filename = 'experiment-number.txt'
 script_path = os.path.dirname(__file__)
 experiment_number_path = os.path.join(script_path, experiment_number_filename)
 
+FILENAME_PMC_EVENTS_LOG = 'pmc-events-log.out'
+FILENAME_PMC_CONTINUOUS_LOG = 'pmc-continuous-log.out'
+
 class ContinuousLogging(threading.Thread): 
     def __init__(self, threadID, experiment_directory, time_period_us):
         threading.Thread.__init__(self)
@@ -21,7 +24,7 @@ class ContinuousLogging(threading.Thread):
     def run(self):
         print ("Starting thread: "+str(self.threadID))
         os.system('sudo ./bin/pmc-run '+str(self.time_period_us)+' > ' \
-                +self.experiment_directory+'/pmc-log.out')
+                +self.experiment_directory+'/'+FILENAME_PMC_CONTINUOUS_LOG)
 
 def set_frequency(freq_mhz):
     res = int(os.sysconf('SC_NPROCESSORS_ONLN'))
@@ -47,7 +50,7 @@ def run_experiment(freq_mhz, core_mask, workloads_config):
         os.makedirs(experiment_directory)    
     os.system('sudo bin/pmc-setup')
     os.system('sudo bin/pmc-get-header > '+experiment_directory \
-            +'/pmc-events.out')
+            +'/'+FILENAME_PMC_EVENTS_LOG)
     loggingThread = ContinuousLogging(0, experiment_directory, 200000)
     loggingThread.start()
     #os.system('bin/pmc-get-header > '+experiment_directory+'/pmc-log.out')
@@ -64,10 +67,10 @@ def run_experiment(freq_mhz, core_mask, workloads_config):
             os.chdir(workloads_df['Directory'].iloc[i])
             shell_text = '#!/usr/bin/env bash\n'
             shell_text += ''+owd+'/bin/pmc-get-pmcs "'+workloads_df['Name'].iloc[i] \
-                    + ' start" >> '+owd+'/'+experiment_directory+'/pmc-events.out\n'
+                    + ' start" >> '+owd+'/'+experiment_directory+'/'+FILENAME_PMC_EVENTS_LOG+'\n'
             shell_text += 'taskset -c '+core_mask+' '+workloads_df['Command'].iloc[i] + '\n'
             shell_text += ''+owd+'/bin/pmc-get-pmcs "'+workloads_df['Name'].iloc[i] \
-                    + ' end" >> '+owd+'/'+experiment_directory+'/pmc-events.out\n'
+                    + ' end" >> '+owd+'/'+experiment_directory+'/'+FILENAME_PMC_EVENTS_LOG+'\n'
             with open('temp_shell.sh', 'w') as f:
                 f.write(shell_text)
             f.closed
@@ -77,7 +80,6 @@ def run_experiment(freq_mhz, core_mask, workloads_config):
     print ("Waiting for logging thread to finish")
     os.system("echo '0' | sudo tee PMC_RUN_CHECK") # Stop data logging
     loggingThread.join()
-    #os.system('sudo ./bin/pmc-run > '+experiment_directory+'/pmc-log.out')
 
 if __name__ == "__main__":
     import argparse
