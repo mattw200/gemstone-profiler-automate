@@ -15,6 +15,8 @@ experiment_number_path = os.path.join(script_path, experiment_number_filename)
 FILENAME_PMC_EVENTS_LOG = 'pmc-events-log.out'
 FILENAME_PMC_CONTINUOUS_LOG = 'pmc-continuous-log.out'
 
+#sudo ./bin/pmc-run 200000 > temp
+
 class ContinuousLogging(threading.Thread): 
     def __init__(self, threadID, experiment_directory, time_period_us):
         threading.Thread.__init__(self)
@@ -25,6 +27,9 @@ class ContinuousLogging(threading.Thread):
         print ("Starting thread: "+str(self.threadID))
         os.system('sudo ./bin/pmc-run '+str(self.time_period_us)+' > ' \
                 +self.experiment_directory+'/'+FILENAME_PMC_CONTINUOUS_LOG)
+        print("Finished thread: "+str(self.threadID))
+        print("Exiting as logging has stopped")
+        sys.exit()
 
 def set_frequency(freq_mhz):
     res = int(os.sysconf('SC_NPROCESSORS_ONLN'))

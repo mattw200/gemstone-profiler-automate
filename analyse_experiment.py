@@ -82,6 +82,7 @@ if __name__ == "__main__":
         delta_time = float(end_time - start_time)/1000.0
         print ('Delta time (s): ' + str(delta_time))
         # now use the continuous log to get the in between times
+        #print (pmc_continuous_log_df['milliseconds'].dtype)
         continuous_df = pmc_continuous_log_df[pmc_continuous_log_df['milliseconds'] > start_time]
         continuous_df = continuous_df[continuous_df['milliseconds'] < end_time]
         print ('Start time: '+str(start_time))
@@ -109,8 +110,8 @@ if __name__ == "__main__":
         row_dict['no. samples'] = num_samples
         row_dict['start time (ms)'] = start_time
         row_dict['end time (ms)'] = end_time
-        row_dict['start date'] = start_row['datetime']
-        row_dict['end date'] = end_row['datetime']
+        row_dict['start date'] = start_row['datetime'].iloc[0]
+        row_dict['end date'] = end_row['datetime'].iloc[0]
         freq_cols = [i for i in pmc_events_log_df.columns.values if i.find('Freq (MHz)') > -1]
         for f in freq_cols:
             freq_vals = combine_event_and_log_vals_float(start_row, end_row, continuous_df, f)
@@ -126,5 +127,3 @@ if __name__ == "__main__":
         os.path.join(args.experiment_dir, run_experiment.FILENAME_PMC_EVENTS_LOG+'-analysed.csv'), 
         sep='\t'
         )
-
-
