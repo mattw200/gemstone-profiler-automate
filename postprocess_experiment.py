@@ -26,6 +26,7 @@ def add_cluster_sum_and_average_counts(input_df):
     # same counters). This assumption is valid for the experimental platform sw
     # 3. Create columns 'Total Cortex-A17 Counts' and 'Average Cortex-A7 Rate'
     # for each event and cycle count
+    pass
 
 
 
@@ -58,7 +59,7 @@ if __name__ == "__main__":
     import argparse
     parser = argparse.ArgumentParser()
     parser.add_argument('-d', '--experiment-dir', dest='experiment_dir', \
-            required=False, \
+            required=True, \
             help='The path to the experiment directory to analyse, ' \
             + 'e.g. "../powmon-experiment-000/"')
     args=parser.parse_args()

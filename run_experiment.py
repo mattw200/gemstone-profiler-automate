@@ -18,6 +18,9 @@ FILENAME_PMC_CONTINUOUS_LOG = 'pmc-continuous-log.out'
 FILENAME_PROGRAM_OUT = 'program-output.log'
 FILENAME_ARGS = 'command-line-args.txt'
 
+# PMC continuous collection sample period in microseconds (us)
+SAMPLE_PERIOD_US = 700000
+
 cpu_ids = {
     'Cortex-A8' : '0x00',
     'Cortex-A7' : '0x07',
@@ -38,8 +41,6 @@ cpu_num_counters = {
     'Cortex-A73' : 6
     }
 
-#sudo ./bin/pmc-run 200000 > temp
-
 
 class ContinuousLogging(threading.Thread): 
     def __init__(self, threadID, experiment_directory, time_period_us):
@@ -58,6 +59,7 @@ class ContinuousLogging(threading.Thread):
 def set_frequency(freq_mhz):
     res = int(os.sysconf('SC_NPROCESSORS_ONLN'))
     print('Number of cpus: '+str(res))
+    print('Setting the CPU frequency (needs sudo)')
     os.system('sudo cpufreq-set -g userspace')
     for i in range(0, res):
         os.system('sudo cpufreq-set -c '+str(i)+' -f '+str(freq_mhz)+'Mhz')
@@ -82,7 +84,7 @@ def run_experiment(freq_mhz, core_mask, workloads_config, command_args):
     os.system('bin/pmc-setup')
     os.system('bin/pmc-get-header > '+experiment_directory \
             +'/'+FILENAME_PMC_EVENTS_LOG)
-    loggingThread = ContinuousLogging(0, experiment_directory, 200000)
+    loggingThread = ContinuousLogging(0, experiment_directory, SAMPLE_PERIOD_US)
     loggingThread.start()
     #os.system('bin/pmc-get-header > '+experiment_directory+'/pmc-log.out')
     set_frequency(freq_mhz)
@@ -111,19 +113,23 @@ def run_experiment(freq_mhz, core_mask, workloads_config, command_args):
                     +'" | tee -a '+owd+'/'+experiment_directory+'/'+FILENAME_PROGRAM_OUT+'\n'
             shell_text += 'echo "-------POWMON COMMAND: '+workloads_df['Command'].iloc[i] \
                     +'" | tee -a '+owd+'/'+experiment_directory+'/'+FILENAME_PROGRAM_OUT+'\n'
-            shell_text += 'echo "-------POWMON TIME: '+str(datetime.datetime.now())+" (" \
+            shell_text += "sleep 1\n"
+            shell_text += 'echo "-------POWMON TIME START: '+str(datetime.datetime.now())+" (" \
                                             +str(int(round(time.time() * 1000)))+")" \
                     +'" | tee -a '+owd+'/'+experiment_directory+'/'+FILENAME_PROGRAM_OUT+'\n'
             shell_text += ''+owd+'/bin/pmc-get-pmcs "'+workloads_df['Name'].iloc[i] \
                     + ' start" >> '+owd+'/'+experiment_directory+'/'+FILENAME_PMC_EVENTS_LOG+'\n'
             shell_text += 'taskset -c '+core_mask+' '+workloads_df['Command'].iloc[i] \
-                    +' | tee -a '+owd+'/'+experiment_directory+'/'+FILENAME_PROGRAM_OUT+'\n'
+                    +' |& tee -a '+owd+'/'+experiment_directory+'/'+FILENAME_PROGRAM_OUT+'\n'
             shell_text += ''+owd+'/bin/pmc-get-pmcs "'+workloads_df['Name'].iloc[i] \
                     + ' end" >> '+owd+'/'+experiment_directory+'/'+FILENAME_PMC_EVENTS_LOG+'\n'
+            shell_text += 'echo "-------POWMON TIME END: '+str(datetime.datetime.now())+" (" \
+                                            +str(int(round(time.time() * 1000)))+")" \
+                    +'" | tee -a '+owd+'/'+experiment_directory+'/'+FILENAME_PROGRAM_OUT+'\n'
             with open('temp_shell.sh', 'w') as f:
                 f.write(shell_text)
             f.closed
-            print (shell_text)
+            #print (shell_text)
             os.system('bash temp_shell.sh')
         finally:
             os.chdir(owd)
