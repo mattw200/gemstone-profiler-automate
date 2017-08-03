@@ -10,6 +10,25 @@ import pandas as pd
 
 REG_MAX = 2**32
 
+# This method derives basic stats from post-processed data
+# E.g. adding the sum of the counts and the average of the rates
+def add_cluster_sum_and_average_counts(input_df):
+    # assumption: clusters have 4 CPUs each: BAD ASSUMPTION! Fix this later
+    # (proposed solution: get experimental platform software to dervice this
+    # and encode into headers). overhead only in pmc-get-header
+    # pmc-setup dervices which cores need to report frequency
+
+    # this bit of code assumes that CPUs of the same type (e.g. A7) are in the 
+    # same cluster (not necessarily true, depending on the device)
+
+    # 1. Find all CPUs of the same type (e.g. A7 or A15)
+    # 2. Find the PMC events (assumption that CPUs of the same type measure the 
+    # same counters). This assumption is valid for the experimental platform sw
+    # 3. Create columns 'Total Cortex-A17 Counts' and 'Average Cortex-A7 Rate'
+    # for each event and cycle count
+
+
+
 def combine_event_and_log_vals_float(start_row, end_row, continuous_df, col_header):
     vals = []
     vals.append(float(start_row[col_header]))
