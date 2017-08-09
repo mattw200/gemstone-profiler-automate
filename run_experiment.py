@@ -64,7 +64,12 @@ def set_frequency(freq_mhz):
     for i in range(0, res):
         os.system('sudo cpufreq-set -c '+str(i)+' -f '+str(freq_mhz)+'Mhz')
 
-def run_experiment(freq_mhz, core_mask, workloads_config, command_args):
+def run_experiment(
+        freq_mhz,
+        core_mask,
+        workloads_config,
+        command_args,
+        pmc_config_filename=None):
     import time
     import datetime
     # setup experiment directory
@@ -81,7 +86,10 @@ def run_experiment(freq_mhz, core_mask, workloads_config, command_args):
     experiment_directory = 'powmon-experiment-{0:0>3}'.format(experiment_num)
     if not os.path.exists(experiment_directory):
         os.makedirs(experiment_directory)    
-    os.system('bin/pmc-setup')
+    if not pmc_config_filename:
+        os.system('bin/pmc-setup')
+    else:
+        os.system('bin/pmc-setup '+pmc_config_filename)
     os.system('bin/pmc-get-header > '+experiment_directory \
             +'/'+FILENAME_PMC_EVENTS_LOG)
     loggingThread = ContinuousLogging(0, experiment_directory, SAMPLE_PERIOD_US)
@@ -144,8 +152,22 @@ def run_experiment(freq_mhz, core_mask, workloads_config, command_args):
 #def parse_pmcs_string(pmcs_string_dict):
     # pmc_strings string is an array of strings
 
+def get_pmcs_to_run_over(pmcs_file, pmcs_cpu):
+    file_lines = []
+    with open(pmcs_file, 'r') as f:
+       file_lines = f.read().split('\n') 
+    f.closed
+    for line in file_lines:
+        fields = line.split(':')
+        if len(fields) == 2:
+            if fields[0] == pmcs_cpu:
+                return [x for x in fields[1].split(',') if x.find('0x') > -1]
+    raise ValueError("Couldn't find the cpu ("+pmcs_cpu+") in the pmcs-file (" \
+            +pmcs_file+")!")
+
 if __name__ == "__main__":
     import argparse
+    import sys
     parser = argparse.ArgumentParser()
     parser.add_argument('-f', '--freq', dest='freq_mhz',  required=False, \
                   help='The frequency in MHz, e.g. -f 1000')
@@ -156,14 +178,9 @@ if __name__ == "__main__":
                   help="The workload config file, e.g. -c 'workloads.config'")
     parser.add_argument('--pmcs-file', dest='pmcs_file', required=False, \
                   help="Specifies the pmcs-setup.txt file to use.")
-    '''
-    parser.add_argument('--pmcs-a7', dest='pmcs_a7', required=False \
-                  help="Set PMCs for Cortex-A7. E.g. "
-                  +'--pmcs-a7 "0x1b,0x50,0x6A,0x73"'
-    parser.add_argument('--pmcs-a15', dest='pmcs_a15', required=False \
-                  help="Set PMCs for Cortex-A15. E.g. "
-                  +'--pmcs-a15 "0x1b,0x50,0x6A,0x73,0x14,0x19"'
-    '''
+    parser.add_argument('--pmcs-cpu', dest='pmcs_cpu', required=False, \
+                  help="Selects the CPU type (e.g. Cortex-A15) for which" \
+                  +" to iterate the PMCs over. Works with the --pmcs-file")
     args=parser.parse_args()
     freq = 1000
     if args.freq_mhz:
@@ -171,11 +188,81 @@ if __name__ == "__main__":
     core_mask = '0,1,2,3'
     if args.core_mask:
         core_mask = args.core_mask
-    # TODO
-    '''
-    if args.pmcs_file:
-    '''
     command_args_text = ""
     for clarg in sys.argv:
         command_args_text += clarg+' '
-    run_experiment(freq, core_mask, args.workloads_config, command_args_text)
+    # check for PMCs
+    if args.pmcs_file or args.pmcs_cpu:
+        if args.pmcs_file and args.pmcs_cpu:
+            print("Running experiment multiple times to capture different PMCs")
+            print("Repeating PMCs for the "+args.pmcs_cpu+" cpu type.")
+            pmcs = get_pmcs_to_run_over(args.pmcs_file, args.pmcs_cpu)
+            print("Capturing the following pmcs: "+str(pmcs))
+            '''
+            import pandas as pd
+            events_cfg_df = pd.read_csv('events.config', sep=',')
+            print events_cfg_df
+            # assumes that the events.config has the correct number of PMCs for
+            # that CPU 
+            num_counters = None
+            events_cfg_df = \
+                    events_cfg_df[events_cfg_df['CPU_NAME'] == args.pmcs_cpu]
+            print events_cfg_df
+            num_counters = None
+            with open('events.config', 'r') as f:
+                lines = f.read().split('\n')
+                for line in lines:
+                    fields = line.split(',')
+                    if fields[1] = args.pmcs_cpu:
+                        num_counters = len(fields) - 2
+                        break
+            f.closed
+            if not num_counters:
+                print("ERROR: could not find the cpu specified in --pmcs-cpu" \
+                        +" in events.config")
+            print num_counters
+            '''
+            num_counters = cpu_num_counters[args.pmcs_cpu]
+            print("Number of counters: "+str(num_counters))
+            pmc_sets = [ pmcs[x:x+num_counters] for x in \
+                    range(0, len(pmcs), num_counters)]
+            print("Running the following experiments:")
+            for i in range(0, len(pmc_sets)):
+                print(str(i)+": "+str(pmc_sets[i]))
+            # create new events.config
+            for pmc_i in range(0, len(pmc_sets)):
+                print("Running PMC Set "+str(pmc_i)+": "+str(pmc_sets[pmc_i])+"")
+                lines = []
+                with open('events.config', 'r') as f:
+                    lines = f.read().split('\n')
+                    for i in range(0, len(lines)):
+                        fields = lines[i].split(',')
+                        if len(fields) > 1:
+                            if fields[1] == args.pmcs_cpu:
+                                lines[i] = fields[0]+','+fields[1]
+                                for pmc in pmc_sets[pmc_i]:
+                                    lines[i]+=','+pmc
+                f.closed
+                for line in lines:
+                    print line
+                with open('temp-events.config', 'w') as f:
+                    f.write('\n'.join(lines))
+                f.closed
+                with open('temp-events.config', 'r') as f:
+                    print("Opening 'temp-events.config'")
+                    print(f.read())
+                f.closed
+                run_experiment(
+                        freq, core_mask,
+                        args.workloads_config, 
+                        command_args_text,
+                        pmc_config_filename='temp-events.config')
+
+
+        else:
+            print("If specifying PMCs, both --pmcs-file and --pmcs-cpu " \
+                    +"are required.")
+            parser.print_help()
+            sys.exit()
+    else:
+        run_experiment(freq, core_mask, args.workloads_config, command_args_text)

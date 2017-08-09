@@ -1,0 +1,16 @@
+Directory	Command	Name
+/home/odroid/Workloads-ARMv7/	sleep 1	idle
+/home/odroid/Workloads-ARMv7/mibench-armv7/automotive/basicmath/	./basicmath_large > output_large.txt	basicmath
+/home/odroid/Workloads-ARMv7/mibench-armv7/automotive/bitcount/	./bitcnts 325000 > output_small.txt	bitcount-small
+/home/odroid/Workloads-ARMv7/mibench-armv7/automotive/qsort/	./qsort_large input_large.dat > output_large.txt	qsort
+/home/odroid/Workloads-ARMv7/mibench-armv7/automotive/susan/	./susan input_large.pgm output_large.smoothing.pgm -s 	susan-smoothing
+/home/odroid/Workloads-ARMv7/mibench-armv7/automotive/susan/	./susan input_large.pgm output_large.edges.pgm -e 	susan-edges
+/home/odroid/Workloads-ARMv7/mibench-armv7/automotive/susan/	./susan input_large.pgm output_large.corners.pgm -c 	susan-corners
+/home/odroid/Workloads-ARMv7/mibench-armv7/consumer/jpeg/	jpeg-6a/cjpeg -dct int -progressive -opt -outfile output_large_encode.jpeg input_large.ppm	jpeg-encode
+/home/odroid/Workloads-ARMv7/lmbench3-armv7/lmbench3/bin/armv7l-linux-gnu/	./lat_ops -N 20	lmb3-lat-ops
+/home/odroid/Workloads-ARMv7/dhrystone-armv7/	./dhrystone	dhrystone
+/home/odroid/Workloads-ARMv7/whetstone-armv7/	./whetstone 2000	whetstone
+/home/odroid/Workloads-ARMv7/parsec-armv7/parsec-3.0/pkgs/apps/blackscholes/inst/arm-linux.gcc/bin	./blackscholes 4 in_4K.txt temp.out	parsec-blackholes-4
+/home/odroid/Workloads-ARMv7/parsec-armv7/parsec-3.0/pkgs/apps/bodytrack/inst/arm-linux.gcc/bin	./bodytrack sequenceB_1/ 4 1 1000 3 0 4	parsec-bodytrack-4
+/home/odroid/Workloads-ARMv7/parsec-armv7/parsec-3.0/pkgs/kernels/canneal/inst/arm-linux.gcc/bin	./canneal 4 10000 2000 10000.nets 32	parsec-canneal-4
+/home/odroid/Workloads-ARMv7/parsec-armv7/parsec-3.0/pkgs/kernels/dedup/inst/arm-linux.gcc/bin	./dedup -c -p -v -t 4 -i media.dat -o output.dat.ddp	parsec-dedup-4
