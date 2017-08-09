@@ -64,28 +64,29 @@ def set_frequency(freq_mhz):
     for i in range(0, res):
         os.system('sudo cpufreq-set -c '+str(i)+' -f '+str(freq_mhz)+'Mhz')
 
+# TODO: new arguments. 
+# Experiment_XXX/PMC_RUN_02_A15_0x33_0x22/
+# 
 def run_experiment(
+        experiment_dir,
         freq_mhz,
         core_mask,
         workloads_config,
         command_args,
+        experiment_subdir=None,
         pmc_config_filename=None):
     import time
     import datetime
-    # setup experiment directory
-    experiment_num = 0
-    try:
-        with open(experiment_number_path, 'r') as f:
-            experiment_num = int(f.read())
-        f.closed
-    except IOError:
-        pass # first experiment
-    with open(experiment_number_path, 'w') as f:
-        f.write(str(experiment_num+1))
-    f.closed
-    experiment_directory = 'powmon-experiment-{0:0>3}'.format(experiment_num)
+    import sys
+    experiment_directory = experiment_dir
     if not os.path.exists(experiment_directory):
         os.makedirs(experiment_directory)    
+    if experiment_subdir:
+        # create a subdirectory and make this the experiment directory
+        experiment_directory = os.path.join(experiment_dir, experiment_subdir)
+        if not os.path.exists(experiment_directory):
+            os.makedirs(experiment_directory)
+        print('experiment_directory: '+experiment_directory)
     if not pmc_config_filename:
         os.system('bin/pmc-setup')
     else:
@@ -191,6 +192,20 @@ if __name__ == "__main__":
     command_args_text = ""
     for clarg in sys.argv:
         command_args_text += clarg+' '
+    # derive experiment directory:
+    # setup experiment directory
+    experiment_num = 0
+    try:
+        with open(experiment_number_path, 'r') as f:
+            experiment_num = int(f.read())
+        f.closed
+    except IOError:
+        pass # first experiment
+    with open(experiment_number_path, 'w') as f:
+        f.write(str(experiment_num+1))
+    f.closed
+    experiment_directory = 'powmon-experiment-{0:0>3}'.format(experiment_num)
+
     # check for PMCs
     if args.pmcs_file or args.pmcs_cpu:
         if args.pmcs_file and args.pmcs_cpu:
@@ -252,17 +267,22 @@ if __name__ == "__main__":
                     print("Opening 'temp-events.config'")
                     print(f.read())
                 f.closed
+                pmc_subdir_name = 'pmc-run-{0:0>2}'.format(pmc_i)
+                for pmc in pmc_sets[pmc_i]:
+                    pmc_subdir_name += '-'+pmc
+                print pmc_subdir_name
                 run_experiment(
-                        freq, core_mask,
+                        experiment_directory,
+                        freq,
+                        core_mask,
                         args.workloads_config, 
                         command_args_text,
+                        experiment_subdir=pmc_subdir_name,
                         pmc_config_filename='temp-events.config')
-
-
         else:
             print("If specifying PMCs, both --pmcs-file and --pmcs-cpu " \
                     +"are required.")
             parser.print_help()
             sys.exit()
     else:
-        run_experiment(freq, core_mask, args.workloads_config, command_args_text)
+        run_experiment(experiment_directory,freq, core_mask, args.workloads_config, command_args_text)
