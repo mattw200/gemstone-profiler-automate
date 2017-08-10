@@ -64,9 +64,6 @@ def set_frequency(freq_mhz):
     for i in range(0, res):
         os.system('sudo cpufreq-set -c '+str(i)+' -f '+str(freq_mhz)+'Mhz')
 
-# TODO: new arguments. 
-# Experiment_XXX/PMC_RUN_02_A15_0x33_0x22/
-# 
 def run_experiment(
         experiment_dir,
         freq_mhz,
@@ -74,81 +71,93 @@ def run_experiment(
         workloads_config,
         command_args,
         experiment_subdir=None,
-        pmc_config_filename=None):
+        pmc_config_filename=None,
+        iterations=1):
     import time
     import datetime
     import sys
-    experiment_directory = experiment_dir
-    if not os.path.exists(experiment_directory):
-        os.makedirs(experiment_directory)    
+    experiment_top_directory = experiment_dir
+    if not os.path.exists(experiment_top_directory):
+        os.makedirs(experiment_top_directory)    
     if experiment_subdir:
         # create a subdirectory and make this the experiment directory
-        experiment_directory = os.path.join(experiment_dir, experiment_subdir)
+        experiment_top_directory = os.path.join(experiment_dir, experiment_subdir)
+        if not os.path.exists(experiment_top_directory):
+            os.makedirs(experiment_top_directory)
+        print('experiment_top_directory: '+experiment_top_directory)
+    # now deal with iterations
+    iterations = int(iterations)
+    if not (iterations > 0 and iterations < 20):
+        print("Invalid number of iterations, must be between 0 and 20")
+        raise ValueError("Invalid number of iterations ("+str(iterations)+")." \
+                + " Must be between 0 and 20")
+    for i_iter in range(0, iterations):
+        iteration_dir_name = "iteration-{0:0>2}".format(i_iter)
+        experiment_directory = os.path.join(experiment_top_directory, iteration_dir_name)
         if not os.path.exists(experiment_directory):
             os.makedirs(experiment_directory)
-        print('experiment_directory: '+experiment_directory)
-    if not pmc_config_filename:
-        os.system('bin/pmc-setup')
-    else:
-        os.system('bin/pmc-setup '+pmc_config_filename)
-    os.system('bin/pmc-get-header > '+experiment_directory \
-            +'/'+FILENAME_PMC_EVENTS_LOG)
-    loggingThread = ContinuousLogging(0, experiment_directory, SAMPLE_PERIOD_US)
-    loggingThread.start()
-    #os.system('bin/pmc-get-header > '+experiment_directory+'/pmc-log.out')
-    set_frequency(freq_mhz)
-    # open workloads config file
-    workloads_df = pd.read_csv(workloads_config, sep='\t')
-    print workloads_df
-    with open(experiment_directory+'/'+FILENAME_ARGS, 'w') as f:
-        f.write(command_args)
-    f.closed
-    program_out_text = "-------POWMON Start of experiment: "
-    program_out_text += str(datetime.datetime.now())+" (" \
-                        +str(int(round(time.time() * 1000)))+")\n"
-    with open(experiment_directory+'/'+FILENAME_PROGRAM_OUT, 'w') as f:
-        f.write(program_out_text)
-    f.closed
-    for i in range(0, len(workloads_df.index)):
-        print 'Working on: '+ workloads_df['Name'].iloc[i]
-        print 'Switching directory to: '+workloads_df['Directory'].iloc[i]
-        owd = os.getcwd()
-        try:
-            os.chdir(workloads_df['Directory'].iloc[i])
-            shell_text = '#!/usr/bin/env bash\n'
-            shell_text += 'echo "-------POWMON WORKLOAD: '+workloads_df['Name'].iloc[i] \
-                    +'" | tee -a '+owd+'/'+experiment_directory+'/'+FILENAME_PROGRAM_OUT+'\n'
-            shell_text += 'echo "-------POWMON DIR: '+workloads_df['Directory'].iloc[i] \
-                    +'" | tee -a '+owd+'/'+experiment_directory+'/'+FILENAME_PROGRAM_OUT+'\n'
-            shell_text += 'echo "-------POWMON COMMAND: '+workloads_df['Command'].iloc[i] \
-                    +'" | tee -a '+owd+'/'+experiment_directory+'/'+FILENAME_PROGRAM_OUT+'\n'
-            shell_text += "sleep 1\n"
-            shell_text += 'echo "-------POWMON TIME START: '+str(datetime.datetime.now())+" (" \
-                                            +str(int(round(time.time() * 1000)))+")" \
-                    +'" | tee -a '+owd+'/'+experiment_directory+'/'+FILENAME_PROGRAM_OUT+'\n'
-            shell_text += ''+owd+'/bin/pmc-get-pmcs "'+workloads_df['Name'].iloc[i] \
-                    + ' start" >> '+owd+'/'+experiment_directory+'/'+FILENAME_PMC_EVENTS_LOG+'\n'
-            shell_text += 'taskset -c '+core_mask+' '+workloads_df['Command'].iloc[i] \
-                    +' |& tee -a '+owd+'/'+experiment_directory+'/'+FILENAME_PROGRAM_OUT+'\n'
-            shell_text += ''+owd+'/bin/pmc-get-pmcs "'+workloads_df['Name'].iloc[i] \
-                    + ' end" >> '+owd+'/'+experiment_directory+'/'+FILENAME_PMC_EVENTS_LOG+'\n'
-            shell_text += 'echo "-------POWMON TIME END: '+str(datetime.datetime.now())+" (" \
-                                            +str(int(round(time.time() * 1000)))+")" \
-                    +'" | tee -a '+owd+'/'+experiment_directory+'/'+FILENAME_PROGRAM_OUT+'\n'
-            with open('temp_shell.sh', 'w') as f:
-                f.write(shell_text)
-            f.closed
-            #print (shell_text)
-            os.system('bash temp_shell.sh')
-        finally:
-            os.chdir(owd)
-    print ("Finished at: "+str(datetime.datetime.now())+" (" \
-            +str(int(round(time.time() * 1000)))+")")
-    print ("Waiting for logging thread to finish")
-    os.system("echo '0' | tee PMC_RUN_CHECK") # Stop data logging
-    loggingThread.join()
-    print ("Exiting at: "+str(datetime.datetime.now())+" (" \
-            +str(int(round(time.time() * 1000)))+")")
+        if not pmc_config_filename:
+            os.system('bin/pmc-setup')
+        else:
+            os.system('bin/pmc-setup '+pmc_config_filename)
+        os.system('bin/pmc-get-header > '+experiment_directory \
+                +'/'+FILENAME_PMC_EVENTS_LOG)
+        loggingThread = ContinuousLogging(0, experiment_directory, SAMPLE_PERIOD_US)
+        loggingThread.start()
+        #os.system('bin/pmc-get-header > '+experiment_directory+'/pmc-log.out')
+        set_frequency(freq_mhz)
+        # open workloads config file
+        workloads_df = pd.read_csv(workloads_config, sep='\t')
+        print workloads_df
+        with open(experiment_directory+'/'+FILENAME_ARGS, 'w') as f:
+            f.write(command_args)
+        f.closed
+        program_out_text = "-------POWMON Start of experiment: "
+        program_out_text += str(datetime.datetime.now())+" (" \
+                            +str(int(round(time.time() * 1000)))+")\n"
+        with open(experiment_directory+'/'+FILENAME_PROGRAM_OUT, 'w') as f:
+            f.write(program_out_text)
+        f.closed
+        for i in range(0, len(workloads_df.index)):
+            print 'Working on: '+ workloads_df['Name'].iloc[i]
+            print 'Switching directory to: '+workloads_df['Directory'].iloc[i]
+            owd = os.getcwd()
+            try:
+                os.chdir(workloads_df['Directory'].iloc[i])
+                shell_text = '#!/usr/bin/env bash\n'
+                shell_text += 'echo "-------POWMON WORKLOAD: '+workloads_df['Name'].iloc[i] \
+                        +'" | tee -a '+owd+'/'+experiment_directory+'/'+FILENAME_PROGRAM_OUT+'\n'
+                shell_text += 'echo "-------POWMON DIR: '+workloads_df['Directory'].iloc[i] \
+                        +'" | tee -a '+owd+'/'+experiment_directory+'/'+FILENAME_PROGRAM_OUT+'\n'
+                shell_text += 'echo "-------POWMON COMMAND: '+workloads_df['Command'].iloc[i] \
+                        +'" | tee -a '+owd+'/'+experiment_directory+'/'+FILENAME_PROGRAM_OUT+'\n'
+                shell_text += "sleep 1\n"
+                shell_text += 'echo "-------POWMON TIME START: '+str(datetime.datetime.now())+" (" \
+                                                +str(int(round(time.time() * 1000)))+")" \
+                        +'" | tee -a '+owd+'/'+experiment_directory+'/'+FILENAME_PROGRAM_OUT+'\n'
+                shell_text += ''+owd+'/bin/pmc-get-pmcs "'+workloads_df['Name'].iloc[i] \
+                        + ' start" >> '+owd+'/'+experiment_directory+'/'+FILENAME_PMC_EVENTS_LOG+'\n'
+                shell_text += 'taskset -c '+core_mask+' '+workloads_df['Command'].iloc[i] \
+                        +' |& tee -a '+owd+'/'+experiment_directory+'/'+FILENAME_PROGRAM_OUT+'\n'
+                shell_text += ''+owd+'/bin/pmc-get-pmcs "'+workloads_df['Name'].iloc[i] \
+                        + ' end" >> '+owd+'/'+experiment_directory+'/'+FILENAME_PMC_EVENTS_LOG+'\n'
+                shell_text += 'echo "-------POWMON TIME END: '+str(datetime.datetime.now())+" (" \
+                                                +str(int(round(time.time() * 1000)))+")" \
+                        +'" | tee -a '+owd+'/'+experiment_directory+'/'+FILENAME_PROGRAM_OUT+'\n'
+                with open('temp_shell.sh', 'w') as f:
+                    f.write(shell_text)
+                f.closed
+                #print (shell_text)
+                os.system('bash temp_shell.sh')
+            finally:
+                os.chdir(owd)
+        print ("Finished at: "+str(datetime.datetime.now())+" (" \
+                +str(int(round(time.time() * 1000)))+")")
+        print ("Waiting for logging thread to finish")
+        os.system("echo '0' | tee PMC_RUN_CHECK") # Stop data logging
+        loggingThread.join()
+        print ("Exiting at: "+str(datetime.datetime.now())+" (" \
+                +str(int(round(time.time() * 1000)))+")")
 
 #def parse_pmcs_string(pmcs_string_dict):
     # pmc_strings string is an array of strings
@@ -162,7 +171,7 @@ def get_pmcs_to_run_over(pmcs_file, pmcs_cpu):
         fields = line.split(':')
         if len(fields) == 2:
             if fields[0] == pmcs_cpu:
-                return [x for x in fields[1].split(',') if x.find('0x') > -1]
+                return [x.strip() for x in fields[1].split(',') if x.find('0x') > -1]
     raise ValueError("Couldn't find the cpu ("+pmcs_cpu+") in the pmcs-file (" \
             +pmcs_file+")!")
 
@@ -182,6 +191,8 @@ if __name__ == "__main__":
     parser.add_argument('--pmcs-cpu', dest='pmcs_cpu', required=False, \
                   help="Selects the CPU type (e.g. Cortex-A15) for which" \
                   +" to iterate the PMCs over. Works with the --pmcs-file")
+    parser.add_argument('--iterations', dest='iterations', required=False, \
+                  help="Number of times to run each experiment")
     args=parser.parse_args()
     freq = 1000
     if args.freq_mhz:
@@ -192,6 +203,11 @@ if __name__ == "__main__":
     command_args_text = ""
     for clarg in sys.argv:
         command_args_text += clarg+' '
+    if not args.iterations:
+        args.iterations = 1
+    if args.iteration % 2 == 0:
+        print("iterations must be an odd number! (e.g. 1,3,5 or 7)")
+        sys.exit()
     # derive experiment directory:
     # setup experiment directory
     experiment_num = 0
@@ -278,11 +294,13 @@ if __name__ == "__main__":
                         args.workloads_config, 
                         command_args_text,
                         experiment_subdir=pmc_subdir_name,
-                        pmc_config_filename='temp-events.config')
+                        pmc_config_filename='temp-events.config',
+                        iterations=args.iterations
+                        )
         else:
             print("If specifying PMCs, both --pmcs-file and --pmcs-cpu " \
                     +"are required.")
             parser.print_help()
             sys.exit()
     else:
-        run_experiment(experiment_directory,freq, core_mask, args.workloads_config, command_args_text)
+        run_experiment(experiment_directory,freq, core_mask, args.workloads_config, command_args_text, iterations=args.iterations)
