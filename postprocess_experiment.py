@@ -276,7 +276,7 @@ def postprocess_new_sytle_experiments(experiment_top_dir):
         pmc_files_to_combine.append(os.path.join(current_pmc_dir, 'consolidated-iterations.csv'))
     combined_pmcs_df = combine_pmc_runs(pmc_files_to_combine)
     print combined_pmcs_df
-    combined_pmcs_df.to_csv(os.path.join(experiment_top_dir, "consolidated-pmc-runs.csv"))
+    combined_pmcs_df.to_csv(os.path.join(experiment_top_dir, "consolidated-pmc-runs.csv"),sep='\t')
            
 
 # Three stages:

@@ -186,9 +186,11 @@ if __name__ == "__main__":
     parser.add_argument('-c', '--workloads-config', dest='workloads_config', \
                   required=True, \
                   help="The workload config file, e.g. -c 'workloads.config'")
-    parser.add_argument('--pmcs-file', dest='pmcs_file', required=False, \
+    # NOTE: have made pmcs-file and pmcs-cpu required as it doesnt create the
+    # correct file structure without these. 
+    parser.add_argument('--pmcs-file', dest='pmcs_file', required=True, \
                   help="Specifies the pmcs-setup.txt file to use.")
-    parser.add_argument('--pmcs-cpu', dest='pmcs_cpu', required=False, \
+    parser.add_argument('--pmcs-cpu', dest='pmcs_cpu', required=True, \
                   help="Selects the CPU type (e.g. Cortex-A15) for which" \
                   +" to iterate the PMCs over. Works with the --pmcs-file")
     parser.add_argument('--iterations', dest='iterations', required=False, \
@@ -205,7 +207,8 @@ if __name__ == "__main__":
         command_args_text += clarg+' '
     if not args.iterations:
         args.iterations = 1
-    if args.iteration % 2 == 0:
+    args.iterations = int(args.iterations)
+    if args.iterations % 2 == 0:
         print("iterations must be an odd number! (e.g. 1,3,5 or 7)")
         sys.exit()
     # derive experiment directory:
