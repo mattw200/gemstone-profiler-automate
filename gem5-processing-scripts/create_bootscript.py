@@ -58,6 +58,26 @@ presets['parmibench'] = [
     'par-dijkstra-mqueue'
 ]
 
+presets['parmibenchA'] = [
+    'par-basicmath-square-small',
+    'par-basicmath-cubic-small',
+    'par-basicmath-rad2deg-small',
+    'par-bitcount'
+]
+
+presets['parmibenchB'] = [
+    'par-patricia',
+    'par-stringsearch-small',
+    'par-sha',
+    'par-dijkstra-mqueue'
+]
+
+presets['parmibenchC'] = [
+    'par-susan-smoothing',
+    'par-susan-edges',
+    'par-susan-corners'
+]
+
 presets['lmbench'] = [
     'lmb3-lat-ctx-0-18',
     'lmb3-lat-ctx-500-18',
@@ -109,6 +129,15 @@ presets['parsec1B'] = [
     'parsec-ferret-1',
     'parsec-swaptions-1',
     'parsec-dedup-1'
+]
+
+presets['roy'] = [
+    'rl-busspeed-small',
+    'rl-dhrystone-small',
+    'rl-linpack-small',
+    'rl-linpack-FSSP-small',
+    'rl-linpack-neon-small',
+    'rl-whetstone-small'
 ]
 
 def get_presets():
