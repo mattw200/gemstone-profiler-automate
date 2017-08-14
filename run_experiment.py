@@ -57,12 +57,23 @@ class ContinuousLogging(threading.Thread):
         sys.exit()
 
 def set_frequency(freq_mhz):
+    # New - freq_mhz can be list. divides every 4 by default
+    # (in future can add a cluster size option for 2 big and 2 little etc.)
     res = int(os.sysconf('SC_NPROCESSORS_ONLN'))
     print('Number of cpus: '+str(res))
     print('Setting the CPU frequency (needs sudo)')
     os.system('sudo cpufreq-set -g userspace')
-    for i in range(0, res):
-        os.system('sudo cpufreq-set -c '+str(i)+' -f '+str(freq_mhz)+'Mhz')
+    if isinstance(freq_mhz, (int, long)):
+        for i in range(0, res):
+            os.system('sudo cpufreq-set -c '+str(i)+' -f '+str(freq_mhz)+'Mhz')
+    else:
+        cluster_size = 4
+        freq_array = freq_mhz.split(',')
+        freq_array = [int(f) for f in freq_array]
+        cpu_id = 0
+        for f in freq_array:
+            os.system('sudo cpufreq-set -c '+str(cpu_id)+' -f '+str(f)+'Mhz')
+            cpu_id += cluster_size
 
 def run_experiment(
         experiment_dir,
