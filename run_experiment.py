@@ -17,6 +17,7 @@ FILENAME_PMC_EVENTS_LOG = 'pmc-events-log.out'
 FILENAME_PMC_CONTINUOUS_LOG = 'pmc-continuous-log.out'
 FILENAME_PROGRAM_OUT = 'program-output.log'
 FILENAME_ARGS = 'command-line-args.txt'
+FILENAME_CORE_MASK_OUT = 'core-mask.txt'
 
 # PMC continuous collection sample period in microseconds (us)
 SAMPLE_PERIOD_US = 700000
@@ -96,6 +97,9 @@ def run_experiment(
         if not os.path.exists(experiment_top_directory):
             os.makedirs(experiment_top_directory)
         print('experiment_top_directory: '+experiment_top_directory)
+    with open(os.path.join(experiment_directory, FILENAME_CORE_MASK_OUT), 'w') as f:
+        f.write(core_mask)
+    f.closed
     # now deal with iterations
     iterations = int(iterations)
     if not (iterations > 0 and iterations < 20):

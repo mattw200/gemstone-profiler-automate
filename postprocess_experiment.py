@@ -67,6 +67,24 @@ def postprocess_experiment(experiment_dir, output_filepath):
     print pmc_events_log_df
     print pmc_continuous_log_df
 
+    # get core mask:
+    core_mask = ''
+    if os.path.isfile(os.path.join(experiment_dir, run_experiment.FILENAME_CORE_MASK_OUT)):
+        with open(os.path.join(experiment_dir, run_experiment.FILENAME_CORE_MASK_OUT),'r') as f:
+            core_mask = f.read().strip()
+        f.closed
+    else:
+        with open(os.path.join(experiment_dir, run_experiment.FILENAME_ARGS), 'r') as f:
+            text = f.read()
+            print text
+            if text.find('0,1,2,3') > -1:
+                core_mask = '0,1,2,3'
+            elif text.find('4,5,6,7') > -1:
+                core_mask = '4,5,6,7'
+            else:
+                raise ValueError("Can't find core mask!")
+        f.closed
+
     # count number of overflows 
     # need the workload names!
     workloads_temp_df = pmc_events_log_df[pmc_events_log_df['label'].str.contains(" start")]
@@ -74,7 +92,7 @@ def postprocess_experiment(experiment_dir, output_filepath):
     # identify PMC columns
     all_cols = [i for i in pmc_events_log_df.columns.values]
     pmc_cols = [i for i in pmc_events_log_df.columns.values if i.find('cntr') > -1 or i.find('count') > -1]
-    new_df_cols = ['workload name', 'duration (s)', 'no. samples', \
+    new_df_cols = ['workload name', 'core mask', 'duration (s)', 'no. samples', \
             'start time (ms)', 'end time (ms)', 'start date', 'end date']
     freq_cols = [i for i in pmc_events_log_df.columns.values if i.find('Freq (MHz)') > -1]
     for freq in freq_cols:
@@ -119,6 +137,7 @@ def postprocess_experiment(experiment_dir, output_filepath):
             row_dict[pmc+' rate']=pmc_diff/delta_time
             num_samples = len(pmc_vals)
         row_dict['workload name'] = current_workload
+        row_dict['core mask'] = core_mask
         row_dict['duration (s)'] = delta_time
         row_dict['no. samples'] = num_samples
         row_dict['start time (ms)'] = start_time
@@ -238,9 +257,9 @@ def combine_pmc_runs(pmc_files):
 def postprocess_new_sytle_experiments(experiment_top_dir):
     import os
     import pandas as pd
-    pmc_dirs  = [x for x in os.listdir(args.experiment_dir)
-             if ( os.path.isdir(os.path.join(args.experiment_dir, x)) \
-                     and x.find('pmc-run') > -1 )]
+    pmc_dirs  = [x for x in os.listdir(experiment_top_dir)
+             if ( os.path.isdir(os.path.join(experiment_top_dir)) \
+                     and x.startswith('pmc-run-')  )]
     pmc_files_to_combine = []
     for pmc_run_i in range(0, len(pmc_dirs)):
         # NOTE: pmc_dirs are not in correct order!
@@ -315,9 +334,9 @@ if __name__ == "__main__":
         # go through discovering directories, consolidating etc. 
         if not args.elaborate_only:
             postprocess_new_sytle_experiments(args.experiment_dir)
-        elaborate(args.experiment_dir)
+        #elaborate(args.experiment_dir)
     else:
         if not args.elaborate_only:
             postprocess_experiment(args.experiment_dir, 
                      os.path.join(args.experiment_dir,run_experiment.FILENAME_PMC_EVENTS_LOG+'-analysed.csv'))
-        elaborate(args.experiment_dir)
+        #elaborate(args.experiment_dir)
