@@ -32,6 +32,8 @@ if __name__=='__main__':
                help="A list of which experiment numbers to use")
     parser.add_argument('-d', '--directory',  dest='directory', required=True, \
                help="The directory in which to find the experiments")
+    parser.add_argument( '--force-clean',  dest='force_clean', action='store_true', required=False, \
+               help="Forces postprocessing to take place even if files already there")
     args=parser.parse_args()
 
     experiment_dirs = get_experiment_files(args.directory,args.experiment_numbers_list.split(','))
@@ -40,8 +42,7 @@ if __name__=='__main__':
     dfs = []
     for d in experiment_dirs:
         f = os.path.join(d,'consolidated-pmc-runs.csv')
-        #if not os.path.isfile(f):
-        if True:
+        if (not os.path.isfile(f)) or args.force_clean:
             print(d+":  postprocessing not complete. Doing this now")
             postprocess_experiment.postprocess_new_sytle_experiments(d)
             current_df = pd.read_csv(f,sep='\t')

@@ -50,9 +50,8 @@ def get_pmc_diff_from_list(pmc_vals):
     print('Overflows: '+str(overflows))
     if not overflows:
         return pmc_vals[-1] - pmc_vals[0]
-        raise ValueError("Overflow!")
     else:
-        return REG_MAX-pmc_vals[0] + pmc_vals[-1] + REG_MAX*overflows
+        return REG_MAX-pmc_vals[0] + pmc_vals[-1] + REG_MAX*(overflows-1)
 
 
 def postprocess_experiment(experiment_dir, output_filepath):
@@ -174,6 +173,7 @@ def consolidate_iterations(files_list):
     # assumption: workloads should be identical in all dfs
     workloads = iteration_dfs[0]['workload name'].tolist()
     combined_df = pd.DataFrame(columns=iteration_dfs[0].columns.values)
+    chosen_iteration_index_list = []
     for wl_i in range(0, len(workloads)):
         print("\nFinding best sample for workload: "+workloads[wl_i])
         execution_times = [df['duration (s)'].iloc[wl_i] for df in iteration_dfs]
@@ -185,6 +185,8 @@ def consolidate_iterations(files_list):
         df_row = iteration_dfs[chosen_index].iloc[wl_i]
         print(df_row)
         combined_df = combined_df.append(df_row, ignore_index=True)
+        chosen_iteration_index_list.append(chosen_index)
+    combined_df.insert(2, 'iteration index', chosen_iteration_index_list)
     return combined_df
 
 
