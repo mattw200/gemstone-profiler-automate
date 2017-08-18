@@ -50,12 +50,32 @@ if __name__=='__main__':
             current_df.insert(0, 'experiment name', os.path.basename(os.path.normpath(f)))
         dfs.append(pd.read_csv(f,sep='\t'))
 
-
-    combined_df = dfs[0]
-    for i in range(1, len(dfs)):
-        combined_df = combined_df.append(dfs[i])
+    for i in range(0, len(dfs)):
+        # NOTE: this has a new bit where it removes the PMCs from the cluster not being used in the experiment
+        # This is done because the same PMC can be included twice if the counter used to count the event 
+        # is different. Therefore, to avoid the same PMC included twice, filter out the PMCs for the other
+        # cluster. 
+        current_df = dfs[i]
+        unique_core_masks = current_df['core mask'].unique()
+        print("Unique core masks for this experiment: "+str(unique_core_masks))
+        if len(unique_core_masks) > 1:
+            raise ValueError("More than one core mask in the same experiment!")
+        cols = current_df.columns.values
+        if unique_core_masks[0] == '0,1,2,3':
+            # remove counters for 4,5,6,6
+            new_cols = [x for x in cols if not (x.find('cntr') > -1 and (x.find('CPU 4') > -1 or x.find('CPU 5') > -1 or x.find('CPU 6') > -1 or x.find('CPU 7') > -1) ) ]
+            current_df = current_df[new_cols]
+        elif unique_core_masks[0] == '4,5,6,7':
+            new_cols = [x for x in cols if not (x.find('cntr') > -1 and (x.find('CPU 0') > -1 or x.find('CPU 1') > -1 or x.find('CPU 2') > -1 or x.find('CPU 3') > -1) ) ]
+            current_df = current_df[new_cols]
+        else:
+            raise ValueError("Unrecognised core mask")
+        if i == 0:
+            combined_df = current_df
+        else:
+            combined_df = combined_df.append(current_df)
     print combined_df
     # in old versions of pandas the cols get mixed up
-    combined_df = combined_df[dfs[0].columns.values]
+    #combined_df = combined_df[dfs[0].columns.values]
     combined_df.to_csv(os.path.join(args.directory,'xu3-combined.csv'),sep='\t')
 
