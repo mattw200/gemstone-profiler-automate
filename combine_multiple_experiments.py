@@ -77,5 +77,13 @@ if __name__=='__main__':
     print combined_df
     # in old versions of pandas the cols get mixed up
     #combined_df = combined_df[dfs[0].columns.values]
+    # re-order columns without dropping any:
+    print("Number of columns in combined_df: "+str(len(combined_df.columns.values)))
+    all_cols_ordered = dfs[0].columns.values.tolist() + [x for x in combined_df.columns.values.tolist() if x not in dfs[0].columns.values.tolist()]
+    cols = combined_df.columns.values 
+    ordered_cols = [x for x in dfs[0].columns.values if x in cols]
+    ordered_cols += [x for x in cols if x not in ordered_cols]
+    print("Number of columns in ordered_cols: "+str(len(ordered_cols)))
+    combined_df = combined_df[ordered_cols]
     combined_df.to_csv(os.path.join(args.directory,'xu3-combined.csv'),sep='\t')
 
