@@ -2,26 +2,12 @@ Directory	Command	Name
 /home/odroid/Workloads-ARMv7/	sleep 30	idle
 /home/odroid/Workloads-ARMv7/mibench-armv7/automotive/basicmath/	./basicmath_large > output_large.txt	basicmath
 /home/odroid/Workloads-ARMv7/mibench-armv7/automotive/bitcount/	./bitcnts 325000 > output_small.txt	bitcount-small
-/home/odroid/Workloads-ARMv7/mibench-armv7/automotive/susan/	./susan input_large.pgm output_large.smoothing.pgm -s 	susan-smoothing
-/home/odroid/Workloads-ARMv7/mibench-armv7/consumer/jpeg/	jpeg-6a/cjpeg -dct int -progressive -opt -outfile output_large_encode.jpeg input_large.ppm	jpeg-encode
-/home/odroid/Workloads-ARMv7/mibench-armv7/network/dijkstra/	./dijkstra_large input.dat > output_large.dat 	dijkstra
-/home/odroid/Workloads-ARMv7/mibench-armv7/network/patricia/	./patricia large.udp > output_large.txt 	patricia
-/home/odroid/Workloads-ARMv7/mibench-armv7/telecomm/FFT/	./fft 8 32768 > output_large.txt	fft
-/home/odroid/Workloads-ARMv7/parmibench-armv7/Products/Automotive/basicmath/	./parallel_basicmath 5 4 1	par-basicmath-rad2deg-small
 /home/odroid/Workloads-ARMv7/parmibench-armv7/Products/Automotive/Susan/Parallel/	./susan_parallel input_large.pgm output_large.smoothing.pgm -s 	par-susan-smoothing
-/home/odroid/Workloads-ARMv7/lmbench3-armv7/lmbench3/bin/armv7l-linux-gnu/	./lat_ops -N 20	lmb3-lat-ops
-/home/odroid/Workloads-ARMv7/lmbench3-armv7/lmbench3/bin/armv7l-linux-gnu/	./bw_mem 200m rd	lmb3-bw-mem-200m-rd
 /home/odroid/Workloads-ARMv7/lmbench3-armv7/lmbench3/bin/armv7l-linux-gnu/	./tlb	lmb3-tlb
 /home/odroid/Workloads-ARMv7/lmbench3-armv7/lmbench3/bin/armv7l-linux-gnu/	./lat_mem_rd 2 256	lmb3-lat-mem-rd-2-256
-/home/odroid/Workloads-ARMv7/roy-longbottom-small-armv7/Raspberry_Pi_Benchmarks/bin-armv7/	./rl-busspeed-small	rl-busspeed-small
-/home/odroid/Workloads-ARMv7/roy-longbottom-small-armv7/Raspberry_Pi_Benchmarks/bin-armv7/	./rl-linpack-FSSP-small	rl-linpack-FSSP-small
 /home/odroid/Workloads-ARMv7/roy-longbottom-small-armv7/Raspberry_Pi_Benchmarks/bin-armv7/	./rl-linpack-neon-small	rl-linpack-neon-small
 /home/odroid/Workloads-ARMv7/dhrystone-armv7/	./dhrystone	dhrystone
 /home/odroid/Workloads-ARMv7/whetstone-armv7/	./whetstone 2000	whetstone
 /home/odroid/Workloads-ARMv7/parsec-armv7/parsec-3.0/pkgs/apps/blackscholes/inst/arm-linux.gcc/bin	./blackscholes 4 in_4K.txt temp.out	parsec-blackscholes-4
 /home/odroid/Workloads-ARMv7/parsec-armv7/parsec-3.0/pkgs/kernels/canneal/inst/arm-linux.gcc/bin	./canneal 4 10000 2000 10000.nets 32	parsec-canneal-4
 /home/odroid/Workloads-ARMv7/parsec-armv7/parsec-3.0/pkgs/kernels/dedup/inst/arm-linux.gcc/bin	./dedup -c -p -v -t 4 -i media.dat -o output.dat.ddp	parsec-dedup-4
-/home/odroid/Workloads-ARMv7/parsec-armv7/parsec-3.0/pkgs/kernels/streamcluster/inst/arm-linux.gcc/bin	./streamcluster 10 20 32 4096 4096 1000 none output.txt 4	parsec-streamcluster-4
-/home/odroid/Workloads-ARMv7/parsec-armv7/parsec-3.0/pkgs/kernels/canneal/inst/arm-linux.gcc/bin	./canneal 1 10000 2000 10000.nets 32	parsec-canneal-1
-/home/odroid/Workloads-ARMv7/parsec-armv7/parsec-3.0/pkgs/apps/fluidanimate/inst/arm-linux.gcc/bin	./fluidanimate 1 5 in_35K.fluid out.fluid	parsec-fluidanimate-1
-/home/odroid/Workloads-ARMv7/parsec-armv7/parsec-3.0/pkgs/apps/swaptions/inst/arm-linux.gcc/bin	./swaptions -ns 16 -sm 6000 -nt 1	parsec-swaptions-1
