@@ -84,7 +84,11 @@ def run_experiment(
         command_args,
         experiment_subdir=None,
         pmc_config_filename=None,
-        iterations=1):
+        iterations=1,
+        pre_sleep=None,
+        post_sleep=None,
+        workload_timeout=None
+        ):
     import time
     import datetime
     import sys
@@ -137,24 +141,62 @@ def run_experiment(
             print 'Working on: '+ workloads_df['Name'].iloc[i]
             print 'Switching directory to: '+workloads_df['Directory'].iloc[i]
             owd = os.getcwd()
+            pre_sleep_shell_text = None
+            post_sleep_shell_text = None
             try:
-                os.chdir(workloads_df['Directory'].iloc[i])
+                current_name = workloads_df['Name'].iloc[i]
+                current_dir = workloads_df['Directory'].iloc[i]
+                current_command = workloads_df['Command'].iloc[i]
+                os.chdir(current_dir)
+                if pre_sleep:
+                    pre_sleep_command = 'sleep '+str(int(pre_sleep))
+                    pre_sleep_name = 'prelseep-'+current_name
+                    pre_sleep_shell_text = '#!/usr/bin/env bash\n'
+                    pre_sleep_shell_text += 'echo "-------POWMON WORKLOAD: '+pre_sleep_name \
+                            +'" | tee -a '+owd+'/'+experiment_directory+'/'+FILENAME_PROGRAM_OUT+'\n'
+                    pre_sleep_shell_text += 'echo "-------POWMON DIR: '+current_dir \
+                            +'" | tee -a '+owd+'/'+experiment_directory+'/'+FILENAME_PROGRAM_OUT+'\n'
+                    pre_sleep_shell_text += 'echo "-------POWMON COMMAND: '+pre_sleep_command \
+                            +'" | tee -a '+owd+'/'+experiment_directory+'/'+FILENAME_PROGRAM_OUT+'\n'
+                    #shell_text += "sleep 1\n"
+                    pre_sleep_shell_text += 'echo "-------POWMON TIME START: '+str(datetime.datetime.now())+" (" \
+                                                    +str(int(round(time.time() * 1000)))+")" \
+                            +'" | tee -a '+owd+'/'+experiment_directory+'/'+FILENAME_PROGRAM_OUT+'\n'
+                    pre_sleep_shell_text += ''+owd+'/bin/pmc-get-pmcs "'+current_name \
+                            + ' start" >> '+owd+'/'+experiment_directory+'/'+FILENAME_PMC_EVENTS_LOG+'\n'
+                    pre_sleep_shell_text += 'taskset -c '+core_mask+' '+pre_sleep_command \
+                            +' |& tee -a '+owd+'/'+experiment_directory+'/'+FILENAME_PROGRAM_OUT+'\n'
+                    pre_sleep_shell_text += ''+owd+'/bin/pmc-get-pmcs "'+pre_sleep_name \
+                            + ' end" >> '+owd+'/'+experiment_directory+'/'+FILENAME_PMC_EVENTS_LOG+'\n'
+                    pre_sleep_shell_text += 'echo "-------POWMON TIME END: '+str(datetime.datetime.now())+" (" \
+                                                +str(int(round(time.time() * 1000)))+")" \
+                            +'" | tee -a '+owd+'/'+experiment_directory+'/'+FILENAME_PROGRAM_OUT+'\n'
+                    with open('temp_shell_pre_sleep.sh', 'w') as f:
+                        f.write(pre_sleep_shell_text)
+                    f.closed
+                if workload_timeout:
+                    # use the timeout command and repeat the workload
+                    workload_timeout = int(workload_timeout) # confirm it is int
+                    # 1. wrap the command in a while loop
+                    # 2. use the timout command
+                    current_command = 'timeout '+str(workload_timeout)+ \
+                            '"while true; do '+current_command+'; done "'
                 shell_text = '#!/usr/bin/env bash\n'
-                shell_text += 'echo "-------POWMON WORKLOAD: '+workloads_df['Name'].iloc[i] \
+                shell_text += 'echo "-------POWMON WORKLOAD: '+current_name \
                         +'" | tee -a '+owd+'/'+experiment_directory+'/'+FILENAME_PROGRAM_OUT+'\n'
-                shell_text += 'echo "-------POWMON DIR: '+workloads_df['Directory'].iloc[i] \
+                shell_text += 'echo "-------POWMON DIR: '+current_dir \
                         +'" | tee -a '+owd+'/'+experiment_directory+'/'+FILENAME_PROGRAM_OUT+'\n'
-                shell_text += 'echo "-------POWMON COMMAND: '+workloads_df['Command'].iloc[i] \
+                shell_text += 'echo "-------POWMON COMMAND: '+current_command \
                         +'" | tee -a '+owd+'/'+experiment_directory+'/'+FILENAME_PROGRAM_OUT+'\n'
-                shell_text += "sleep 1\n"
+                #shell_text += "sleep 1\n"
                 shell_text += 'echo "-------POWMON TIME START: '+str(datetime.datetime.now())+" (" \
                                                 +str(int(round(time.time() * 1000)))+")" \
                         +'" | tee -a '+owd+'/'+experiment_directory+'/'+FILENAME_PROGRAM_OUT+'\n'
-                shell_text += ''+owd+'/bin/pmc-get-pmcs "'+workloads_df['Name'].iloc[i] \
+                shell_text += ''+owd+'/bin/pmc-get-pmcs "'+current_name \
                         + ' start" >> '+owd+'/'+experiment_directory+'/'+FILENAME_PMC_EVENTS_LOG+'\n'
-                shell_text += 'taskset -c '+core_mask+' '+workloads_df['Command'].iloc[i] \
+                shell_text += 'taskset -c '+core_mask+' '+current_command \
                         +' |& tee -a '+owd+'/'+experiment_directory+'/'+FILENAME_PROGRAM_OUT+'\n'
-                shell_text += ''+owd+'/bin/pmc-get-pmcs "'+workloads_df['Name'].iloc[i] \
+                shell_text += ''+owd+'/bin/pmc-get-pmcs "'+current_name \
                         + ' end" >> '+owd+'/'+experiment_directory+'/'+FILENAME_PMC_EVENTS_LOG+'\n'
                 shell_text += 'echo "-------POWMON TIME END: '+str(datetime.datetime.now())+" (" \
                                                 +str(int(round(time.time() * 1000)))+")" \
@@ -162,8 +204,38 @@ def run_experiment(
                 with open('temp_shell.sh', 'w') as f:
                     f.write(shell_text)
                 f.closed
-                #print (shell_text)
+                if post_sleep:
+                    post_sleep_command = 'sleep '+str(int(post_sleep))
+                    post_sleep_name = 'prelseep-'+current_name
+                    post_sleep_shell_text = '#!/usr/bin/env bash\n'
+                    post_sleep_shell_text += 'echo "-------POWMON WORKLOAD: '+post_sleep_name \
+                            +'" | tee -a '+owd+'/'+experiment_directory+'/'+FILENAME_PROGRAM_OUT+'\n'
+                    post_sleep_shell_text += 'echo "-------POWMON DIR: '+current_dir \
+                            +'" | tee -a '+owd+'/'+experiment_directory+'/'+FILENAME_PROGRAM_OUT+'\n'
+                    post_sleep_shell_text += 'echo "-------POWMON COMMAND: '+post_sleep_command \
+                            +'" | tee -a '+owd+'/'+experiment_directory+'/'+FILENAME_PROGRAM_OUT+'\n'
+                    #shell_text += "sleep 1\n"
+                    post_sleep_shell_text += 'echo "-------POWMON TIME START: '+str(datetime.datetime.now())+" (" \
+                                                    +str(int(round(time.time() * 1000)))+")" \
+                            +'" | tee -a '+owd+'/'+experiment_directory+'/'+FILENAME_PROGRAM_OUT+'\n'
+                    post_sleep_shell_text += ''+owd+'/bin/pmc-get-pmcs "'+current_name \
+                            + ' start" >> '+owd+'/'+experiment_directory+'/'+FILENAME_PMC_EVENTS_LOG+'\n'
+                    post_sleep_shell_text += 'taskset -c '+core_mask+' '+post_sleep_command \
+                            +' |& tee -a '+owd+'/'+experiment_directory+'/'+FILENAME_PROGRAM_OUT+'\n'
+                    post_sleep_shell_text += ''+owd+'/bin/pmc-get-pmcs "'+post_sleep_name \
+                            + ' end" >> '+owd+'/'+experiment_directory+'/'+FILENAME_PMC_EVENTS_LOG+'\n'
+                    post_sleep_shell_text += 'echo "-------POWMON TIME END: '+str(datetime.datetime.now())+" (" \
+                                                +str(int(round(time.time() * 1000)))+")" \
+                            +'" | tee -a '+owd+'/'+experiment_directory+'/'+FILENAME_PROGRAM_OUT+'\n'
+                    with open('temp_shell_post_sleep.sh', 'w') as f:
+                        f.write(post_sleep_shell_text)
+                    f.closed
+                # Run generated shell scripts
+                if pre_sleep:
+                    os.system('bash temp_shell_pre_sleep.sh')
                 os.system('bash temp_shell.sh')
+                if post_sleep:
+                    os.system('bash temp_shell_post_sleep.sh')
             finally:
                 os.chdir(owd)
         print ("Finished at: "+str(datetime.datetime.now())+" (" \
@@ -210,6 +282,17 @@ if __name__ == "__main__":
                   +" to iterate the PMCs over. Works with the --pmcs-file")
     parser.add_argument('--iterations', dest='iterations', required=False, \
                   help="Number of times to run each experiment")
+    parser.add_argument('--pre-sleep', dest='pre_sleep', required=False, \
+                  help="If present, sleeps and records before workload. " \
+                  +"E.g. --pre-sleep 30 : adds 30 seconds of pre sleep workload")
+    parser.add_argument('--post-sleep', dest='post_sleep', required=False, \
+                  help="If present, sleeps and records after workload. " \
+                  +"E.g. --pre-sleep 30 : adds 30 seconds of post sleep workload")
+    parser.add_argument('--workload-timeout', dest='workload_timeout', required=False, \
+                 help="If present, the workload is repeated and terminated so " \
+                 +"that it runs for the exact time specified (seconds)" \
+                 +" e.g. --workload-timeout 30 : runs workload for exactly " \
+                 +" 30 seconds")
     args=parser.parse_args()
     freq = 1000
     if args.freq_mhz:
@@ -247,30 +330,6 @@ if __name__ == "__main__":
             print("Repeating PMCs for the "+args.pmcs_cpu+" cpu type.")
             pmcs = get_pmcs_to_run_over(args.pmcs_file, args.pmcs_cpu)
             print("Capturing the following pmcs: "+str(pmcs))
-            '''
-            import pandas as pd
-            events_cfg_df = pd.read_csv('events.config', sep=',')
-            print events_cfg_df
-            # assumes that the events.config has the correct number of PMCs for
-            # that CPU 
-            num_counters = None
-            events_cfg_df = \
-                    events_cfg_df[events_cfg_df['CPU_NAME'] == args.pmcs_cpu]
-            print events_cfg_df
-            num_counters = None
-            with open('events.config', 'r') as f:
-                lines = f.read().split('\n')
-                for line in lines:
-                    fields = line.split(',')
-                    if fields[1] = args.pmcs_cpu:
-                        num_counters = len(fields) - 2
-                        break
-            f.closed
-            if not num_counters:
-                print("ERROR: could not find the cpu specified in --pmcs-cpu" \
-                        +" in events.config")
-            print num_counters
-            '''
             num_counters = cpu_num_counters[args.pmcs_cpu]
             print("Number of counters: "+str(num_counters))
             pmc_sets = [ pmcs[x:x+num_counters] for x in \
@@ -321,4 +380,4 @@ if __name__ == "__main__":
             parser.print_help()
             sys.exit()
     else:
-        run_experiment(experiment_directory,freq, core_mask, args.workloads_config, command_args_text, iterations=args.iterations)
+        run_experiment(experiment_directory,freq, core_mask, args.workloads_config, command_args_text, iterations=args.iterations,pre_sleep=args.pre_sleep,post_sleep=args.post_sleep,workload_timeout=workload_timeout)
