@@ -101,7 +101,7 @@ def run_experiment(
         if not os.path.exists(experiment_top_directory):
             os.makedirs(experiment_top_directory)
         print('experiment_top_directory: '+experiment_top_directory)
-    with open(os.path.join(experiment_directory, FILENAME_CORE_MASK_OUT), 'w') as f:
+    with open(os.path.join(experiment_top_directory, FILENAME_CORE_MASK_OUT), 'w') as f:
         f.write(core_mask)
     f.closed
     # now deal with iterations
@@ -175,12 +175,15 @@ def run_experiment(
                         f.write(pre_sleep_shell_text)
                     f.closed
                 if workload_timeout:
-                    # use the timeout command and repeat the workload
-                    workload_timeout = int(workload_timeout) # confirm it is int
-                    # 1. wrap the command in a while loop
-                    # 2. use the timout command
-                    current_command = 'timeout '+str(workload_timeout)+ \
-                            '"while true; do '+current_command+'; done "'
+                    ## use the timeout command and repeat the workload
+                    #workload_timeout = int(workload_timeout) # confirm it is int
+                    ## 1. wrap the command in a while loop
+                    ## 2. use the timout command
+                    #current_command = 'timeout '+str(workload_timeout)+ \
+                    #        '  while true; do '+current_command+'; done  '
+                    # Do repeats:
+                    # taskset -c 4,5,6,7 $(while true; do ./basicmath_large > output_large.txt; done) |& tee -a /home/odroid/temperature/powmon-pmc-armv8/powmon-experiment-013/pmc-run-02-0x11-0x12-0x13-0x14-0x15-0x16/iteration-00/program-output.log
+                    current_command = '$(while true; do '+current_command+'; done)'
                 shell_text = '#!/usr/bin/env bash\n'
                 shell_text += 'echo "-------POWMON WORKLOAD: '+current_name \
                         +'" | tee -a '+owd+'/'+experiment_directory+'/'+FILENAME_PROGRAM_OUT+'\n'
@@ -206,7 +209,7 @@ def run_experiment(
                 f.closed
                 if post_sleep:
                     post_sleep_command = 'sleep '+str(int(post_sleep))
-                    post_sleep_name = 'prelseep-'+current_name
+                    post_sleep_name = 'postslseep-'+current_name
                     post_sleep_shell_text = '#!/usr/bin/env bash\n'
                     post_sleep_shell_text += 'echo "-------POWMON WORKLOAD: '+post_sleep_name \
                             +'" | tee -a '+owd+'/'+experiment_directory+'/'+FILENAME_PROGRAM_OUT+'\n'
@@ -233,7 +236,10 @@ def run_experiment(
                 # Run generated shell scripts
                 if pre_sleep:
                     os.system('bash temp_shell_pre_sleep.sh')
-                os.system('bash temp_shell.sh')
+                if workload_timeout:
+                    os.system('timeout '+str(workload_timeout)+' bash temp_shell.sh')
+                else:
+                    os.system('bash temp_shell.sh')
                 if post_sleep:
                     os.system('bash temp_shell_post_sleep.sh')
             finally:
@@ -372,7 +378,10 @@ if __name__ == "__main__":
                         command_args_text,
                         experiment_subdir=pmc_subdir_name,
                         pmc_config_filename='temp-events.config',
-                        iterations=args.iterations
+                        iterations=args.iterations,
+                        pre_sleep=args.pre_sleep,
+                        post_sleep=args.post_sleep,
+                        workload_timeout=args.workload_timeout
                         )
         else:
             print("If specifying PMCs, both --pmcs-file and --pmcs-cpu " \
@@ -380,4 +389,4 @@ if __name__ == "__main__":
             parser.print_help()
             sys.exit()
     else:
-        run_experiment(experiment_directory,freq, core_mask, args.workloads_config, command_args_text, iterations=args.iterations,pre_sleep=args.pre_sleep,post_sleep=args.post_sleep,workload_timeout=workload_timeout)
+        run_experiment(experiment_directory,freq, core_mask, args.workloads_config, command_args_text, iterations=args.iterations,pre_sleep=args.pre_sleep,post_sleep=args.post_sleep,workload_timeout=args.workload_timeout)
