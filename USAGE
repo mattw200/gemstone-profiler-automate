@@ -11,3 +11,4 @@ sudo ./powmon-scripts/run_experiment.py -m '0,1,2,3,4,5,6,7' -c powmon-scripts/w
 
 ./powmon-scripts/run_experiment.py -m '4,5,6,7' -c powmon-scripts/workloads-test.config.armv7 -f '1000,1200' --pmcs-file powmon-scripts/pmcs-setup.txt --pmcs-cpu "Cortex-A15" --pre-sleep 4 --post-sleep 6 --workload-timeout 5
 
+./powmon-scripts/run_experiment.py -m '4,5,6,7' -c powmon-scripts/workloads-small-temperature.config.armv7 -f '1000,1200' --pmcs-file powmon-scripts/pmcs-setup-tcad.txt --pmcs-cpu "Cortex-A15" --pre-sleep 60 --post-sleep 60 --workload-timeout 60
