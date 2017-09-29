@@ -2,8 +2,8 @@ Directory	Command	Name
 /home/odroid/Workloads-ARMv7/	sleep 30	idle
 /home/odroid/Workloads-ARMv7/mibench-armv7/automotive/basicmath/	./basicmath_large > output_large.txt	basicmath
 /home/odroid/Workloads-ARMv7/mibench-armv7/automotive/bitcount/	./bitcnts 325000 > output_small.txt	bitcount-small
+/home/odroid/Workloads-ARMv7/mibench-armv7/office/stringsearch/	./search_large > output_large.txt	stringsearch
 /home/odroid/Workloads-ARMv7/parmibench-armv7/Products/Automotive/Susan/Parallel/	./susan_parallel input_large.pgm output_large.smoothing.pgm -s 	par-susan-smoothing
-/home/odroid/Workloads-ARMv7/lmbench3-armv7/lmbench3/bin/armv7l-linux-gnu/	./tlb	lmb3-tlb
 /home/odroid/Workloads-ARMv7/lmbench3-armv7/lmbench3/bin/armv7l-linux-gnu/	./lat_mem_rd 2 256	lmb3-lat-mem-rd-2-256
 /home/odroid/Workloads-ARMv7/roy-longbottom-small-armv7/Raspberry_Pi_Benchmarks/bin-armv7/	./rl-linpack-neon-small	rl-linpack-neon-small
 /home/odroid/Workloads-ARMv7/dhrystone-armv7/	./dhrystone	dhrystone

@@ -22,6 +22,7 @@ FILENAME_CORE_MASK_OUT = 'core-mask.txt'
 # PMC continuous collection sample period in microseconds (us)
 SAMPLE_PERIOD_US = 700000
 
+
 cpu_ids = {
     'Cortex-A8' : '0x00',
     'Cortex-A7' : '0x07',
@@ -128,6 +129,10 @@ def run_experiment(
         # open workloads config file
         workloads_df = pd.read_csv(workloads_config, sep='\t')
         print workloads_df
+        # change home dir so it works on other platforms
+        original_home_dir = '/home/odroid'
+        home_dir = os.path.expanduser('~')
+        workloads_df['Directory'] = workloads_df['Directory'].apply(lambda x: x.replace(original_home_dir,home_dir))
         with open(experiment_directory+'/'+FILENAME_ARGS, 'w') as f:
             f.write(command_args)
         f.closed
