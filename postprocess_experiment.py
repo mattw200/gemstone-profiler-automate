@@ -252,6 +252,9 @@ def postprocess_experiment(experiment_dir, output_filepath,temperature_file=None
                         (float(temp_t_series_df['milliseconds'].iloc[r])-float(temp_t_series_df['milliseconds'].iloc[r-1]))/1000.0\
                         ))
             temp_t_series_df[pmc+' rate last interval'] = pmc_rates
+            # lerp pmcs
+            temp_t_series_df[pmc+' rate lerp'] = temp_t_series_df['milliseconds'].apply( \
+                    lambda x: np.interp(float(x),mid_millis[1:], pmc_rates[1:]))
         if len(time_series_df.columns.values) < 2: 
             # not yet initialised
             time_series_df = temp_t_series_df
