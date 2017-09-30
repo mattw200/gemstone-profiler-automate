@@ -167,7 +167,7 @@ def run_experiment(
                     pre_sleep_shell_text += 'echo "-------POWMON TIME START: '+str(datetime.datetime.now())+" (" \
                                                     +str(int(round(time.time() * 1000)))+")" \
                             +'" | tee -a '+owd+'/'+experiment_directory+'/'+FILENAME_PROGRAM_OUT+'\n'
-                    pre_sleep_shell_text += ''+owd+'/bin/pmc-get-pmcs "'+current_name \
+                    pre_sleep_shell_text += ''+owd+'/bin/pmc-get-pmcs "'+pre_sleep_name \
                             + ' start" >> '+owd+'/'+experiment_directory+'/'+FILENAME_PMC_EVENTS_LOG+'\n'
                     pre_sleep_shell_text += 'taskset -c '+core_mask+' '+pre_sleep_command \
                             +' |& tee -a '+owd+'/'+experiment_directory+'/'+FILENAME_PROGRAM_OUT+'\n'
@@ -188,7 +188,12 @@ def run_experiment(
                     #        '  while true; do '+current_command+'; done  '
                     # Do repeats:
                     # taskset -c 4,5,6,7 $(while true; do ./basicmath_large > output_large.txt; done) |& tee -a /home/odroid/temperature/powmon-pmc-armv8/powmon-experiment-013/pmc-run-02-0x11-0x12-0x13-0x14-0x15-0x16/iteration-00/program-output.log
-                    current_command = '$(while true; do '+current_command+'; done)'
+                    inner_command = '$(while true; do '+current_command+'; done)'
+                    inner_shell_text = '#!/usr/bin/env bash\n'+inner_command+'\n'
+                    with open('inner_shell.sh', 'w') as f:
+                        f.write(inner_shell_text)
+                    f.closed
+                    current_command = 'timeout '+str(int(workload_timeout))+' bash inner_shell.sh'
                 shell_text = '#!/usr/bin/env bash\n'
                 shell_text += 'echo "-------POWMON WORKLOAD: '+current_name \
                         +'" | tee -a '+owd+'/'+experiment_directory+'/'+FILENAME_PROGRAM_OUT+'\n'
@@ -226,7 +231,7 @@ def run_experiment(
                     post_sleep_shell_text += 'echo "-------POWMON TIME START: '+str(datetime.datetime.now())+" (" \
                                                     +str(int(round(time.time() * 1000)))+")" \
                             +'" | tee -a '+owd+'/'+experiment_directory+'/'+FILENAME_PROGRAM_OUT+'\n'
-                    post_sleep_shell_text += ''+owd+'/bin/pmc-get-pmcs "'+current_name \
+                    post_sleep_shell_text += ''+owd+'/bin/pmc-get-pmcs "'+post_sleep_name \
                             + ' start" >> '+owd+'/'+experiment_directory+'/'+FILENAME_PMC_EVENTS_LOG+'\n'
                     post_sleep_shell_text += 'taskset -c '+core_mask+' '+post_sleep_command \
                             +' |& tee -a '+owd+'/'+experiment_directory+'/'+FILENAME_PROGRAM_OUT+'\n'
@@ -241,10 +246,7 @@ def run_experiment(
                 # Run generated shell scripts
                 if pre_sleep:
                     os.system('bash temp_shell_pre_sleep.sh')
-                if workload_timeout:
-                    os.system('timeout '+str(workload_timeout)+' bash temp_shell.sh')
-                else:
-                    os.system('bash temp_shell.sh')
+                os.system('bash temp_shell.sh')
                 if post_sleep:
                     os.system('bash temp_shell_post_sleep.sh')
             finally:

@@ -10,6 +10,23 @@ import pandas as pd
 
 REG_MAX = 2**32
 
+def get_pmc_rate(current,last,time_period_s):
+    if current >= last:
+        return (current-last)/time_period_s
+    else:
+        return ((REG_MAX-last)+current)/time_period_s
+
+# This function is to deal with the uneven sample period of temperature
+def mean_temperature_interpolated(milli_list, t_list):
+    # 1. Interpolate
+    import numpy as np
+    temp_for_each_milli = []
+    milli_list_f = [float(x) for x in milli_list]
+    print 'milli list: '+str(milli_list)
+    print 'temperature list: '+str(milli_list)
+    for i in range(milli_list[0], milli_list[-1], 1):
+        temp_for_each_milli.append(np.interp(float(i),milli_list_f,t_list))
+    return np.mean(temp_for_each_milli)
 
 # This method derives basic stats from post-processed data
 # E.g. adding the sum of the counts and the average of the rates
@@ -54,7 +71,8 @@ def get_pmc_diff_from_list(pmc_vals):
         return REG_MAX-pmc_vals[0] + pmc_vals[-1] + REG_MAX*(overflows-1)
 
 
-def postprocess_experiment(experiment_dir, output_filepath):
+def postprocess_experiment(experiment_dir, output_filepath,temperature_file=None):
+    import numpy as np
     pmc_events_log_df = pd.read_csv(
         os.path.join(experiment_dir, run_experiment.FILENAME_PMC_EVENTS_LOG), 
         sep='\t'
@@ -67,6 +85,7 @@ def postprocess_experiment(experiment_dir, output_filepath):
     print pmc_continuous_log_df
 
     # get core mask:
+    # TODO improve this
     core_mask = ''
     if os.path.isfile(os.path.join(experiment_dir, run_experiment.FILENAME_CORE_MASK_OUT)):
         with open(os.path.join(experiment_dir, run_experiment.FILENAME_CORE_MASK_OUT),'r') as f:
@@ -83,7 +102,6 @@ def postprocess_experiment(experiment_dir, output_filepath):
             else:
                 raise ValueError("Can't find core mask!")
         f.closed
-
     # count number of overflows 
     # need the workload names!
     workloads_temp_df = pmc_events_log_df[pmc_events_log_df['label'].str.contains(" start")]
@@ -94,19 +112,32 @@ def postprocess_experiment(experiment_dir, output_filepath):
     new_df_cols = ['workload name', 'core mask', 'duration (s)', 'no. samples', \
             'start time (ms)', 'end time (ms)', 'start date', 'end date']
     freq_cols = [i for i in pmc_events_log_df.columns.values if i.find('Freq (MHz)') > -1]
+    temperature_cols = [x for x in pmc_events_log_df.columns.values \
+            if x.find('Temperature') > -1 or x.find('temperature') > -1]
     for freq in freq_cols:
         new_df_cols.append(freq)
     for pmc in pmc_cols:
         new_df_cols.append(pmc+' diff')
     for pmc in pmc_cols:
         new_df_cols.append(pmc+' rate')
+    for temperature in temperature_cols:
+        new_df_cols.append(temperature+' mean (no interp)')
+        new_df_cols.append(temperature+' mean (interp)')
+    #if temperature_file:
+        #new_df_cols.append('Ambient Temperature')
     new_df = pd.DataFrame(columns=new_df_cols) 
+    #time_series_pmc_cols = [x+' rate' for x in pmc_cols]
+    #time_series_df = pd.DataFrame(columns=['workload name','milliseconds', \
+    #        'datetime']+freq_cols+time_series_pmc_cols+temperature_cols)
+    time_series_df = pd.DataFrame(columns=['temp'])
     for i in range(0, len(workloads_temp_df.index)):
         current_workload = workloads_temp_df['label'].iloc[i].split()[0]
         print ('\nAnalaysing workload: '+current_workload)
         # get the start time stamp and end time stamp (milli)
         start_row = pmc_events_log_df[pmc_events_log_df['label'] == current_workload+' start']
         end_row = pmc_events_log_df[pmc_events_log_df['label'] == current_workload+' end']
+        print ("Start row: "+str(start_row))
+        print ("debug: "+str(start_row['milliseconds']))
         start_time = long(start_row['milliseconds'])
         end_time = long(end_row['milliseconds'])
         delta_time = float(end_time - start_time)/1000.0
@@ -135,6 +166,38 @@ def postprocess_experiment(experiment_dir, output_filepath):
             row_dict[pmc+' diff']=pmc_diff
             row_dict[pmc+' rate']=pmc_diff/delta_time
             num_samples = len(pmc_vals)
+        # process temperature samples
+        for t_col in temperature_cols:
+            t_vals = []
+            milli_vals = []
+            t_vals.append(float(start_row[t_col]))
+            milli_vals.append(long(start_row['milliseconds']))
+            for j in range(0, len(continuous_df.index)):
+                t_vals.append(float(continuous_df[t_col].iloc[j]))
+                milli_vals.append(long(continuous_df['milliseconds'].iloc[j]))
+            t_vals.append(float(end_row[t_col]))
+            milli_vals.append(long(end_row['milliseconds']))
+            mean_no_interp = np.mean(t_vals)
+            mean_interp = mean_temperature_interpolated(milli_vals,t_vals)
+            row_dict[t_col+' mean (no interp)'] = mean_no_interp
+            row_dict[t_col+' mean (interp)'] = mean_interp
+        # process ambient temperature - incl. time series
+        ambi_in_range = None
+        if temperature_file:
+            ambi_temp_df=pd.read_csv(temperature_file,header=None,sep='\t')
+            ambi_temp_df.columns = ['up count', 'milliseconds','datetime','Ambient Temperature'] 
+            # try and find in range:
+            ambi_in_range_df = ambi_temp_df[ \
+                    (ambi_temp_df['milliseconds'] > start_time) & (ambi_temp_df['milliseconds'] < end_time) \
+                    ]
+            if len(ambi_in_range_df.index) < 1:
+                raise NotImplementedError("Cannot yet deal with the situation " \
+                        +"where there is no temperature value within the sample")
+            print ambi_in_range_df
+            row_dict['Ambient Temperature mean (no interp)'] = np.mean(ambi_in_range_df['Ambient Temperature'])
+            row_dict['Ambient Temperature mean (interp)'] = mean_temperature_interpolated( \
+                    ambi_in_range_df['milliseconds'].tolist(), \
+                    [float(x) for x in ambi_in_range_df['Ambient Temperature'].tolist()])
         row_dict['workload name'] = current_workload
         row_dict['core mask'] = core_mask
         row_dict['duration (s)'] = delta_time
@@ -143,7 +206,7 @@ def postprocess_experiment(experiment_dir, output_filepath):
         row_dict['end time (ms)'] = end_time
         row_dict['start date'] = start_row['datetime'].iloc[0]
         row_dict['end date'] = end_row['datetime'].iloc[0]
-        freq_cols = [i for i in pmc_events_log_df.columns.values if i.find('Freq (MHz)') > -1]
+        #freq_cols = [i for i in pmc_events_log_df.columns.values if i.find('Freq (MHz)') > -1] ???
         for f in freq_cols:
             freq_vals = combine_event_and_log_vals_float(start_row, end_row, continuous_df, f)
             first_freq = freq_vals[0]
@@ -153,12 +216,69 @@ def postprocess_experiment(experiment_dir, output_filepath):
             row_dict[f] = first_freq
         new_df = new_df.append(row_dict, ignore_index=True)
         print row_dict
-    print new_df
+        # now do time series stuff
+        # working on splice (continuous_df) with start and end
+        ambient_temp_col = []
+        time_series_cols = ['label','milliseconds', \
+            'datetime']+freq_cols+temperature_cols+pmc_cols
+        temp_t_series_df = start_row[time_series_cols]
+        temp_t_series_df = temp_t_series_df.append(continuous_df[time_series_cols],ignore_index=True)
+        temp_t_series_df = temp_t_series_df.append(end_row[time_series_cols],ignore_index=True)
+        # pmcs in t_series:
+        if temperature_file:
+            temp_t_series_df['Ambient Temperature mean'] = temp_t_series_df['milliseconds'].apply( \
+                    lambda x : np.mean(ambi_in_range_df['Ambient Temperature'])) # doesn't use x on purpose
+            temp_t_series_df['Ambient Temperature Lerp'] = temp_t_series_df['milliseconds'].apply( \
+                    lambda x: np.interp(float(x), \
+                    [float(y) for y in ambi_in_range_df['Ambient Temperature'].tolist()], \
+                    [float(y) for y in ambi_in_range_df['Ambient Temperature'].tolist()]))
+        mid_millis = [0]
+        for r in range(1, len(temp_t_series_df.index)):
+            mid_millis.append(long(temp_t_series_df['milliseconds'].iloc[r-1]) + \
+                    ((long(temp_t_series_df['milliseconds'].iloc[r])-long(temp_t_series_df['milliseconds'].iloc[r-1]))/long(2)))
+        temp_t_series_df['pmc mid millis'] = mid_millis
+        for pmc in pmc_cols:
+            #temp_t_series_df[pmc+' rate test'] = temp_t_series_df.apply(lambda row: \
+            #        get_pmc_rate(\
+            #        row[pmc], \
+            #        row[pmc].shift(-1), \
+            #        (float(row['milliseconds'])-float(row['milliseconds'].shift(-1)))/1000 \
+            #        ),axis=1)
+            pmc_rates = [0]
+            for r in range(1, len(temp_t_series_df.index)):
+                pmc_rates.append(get_pmc_rate( \
+                        float(temp_t_series_df[pmc].iloc[r]),
+                        float(temp_t_series_df[pmc].iloc[r-1]),
+                        (float(temp_t_series_df['milliseconds'].iloc[r])-float(temp_t_series_df['milliseconds'].iloc[r-1]))/1000.0\
+                        ))
+            temp_t_series_df[pmc+' rate last interval'] = pmc_rates
+        if len(time_series_df.columns.values) < 2: 
+            # not yet initialised
+            time_series_df = temp_t_series_df
+        else:
+            # has been initialise, append to what's already there
+            time_series_df = time_series_df.append(temp_t_series_df,ignore_index=True)
+        # pmcs take a little more work
+        #new_pmc_df = pd.DataFrame(columns=['milliseconds']+[x+' rate' for x in pmc_cols])
+        #for r in range(1, len(temp_t_series_df.index)):
+        #    pmc_dict = {}
+        #    pmc_dict['milliseconds'] = temp_t_series_df['milliseconds'].iloc[r] - temp_t_series_df['milliseconds'].iloc[r-1]
+        #    for pmc in pmc_cols:
+        #        pmc_dict[pmc+' rate'] = get_pmc_rate(temp_t_series_df[pmc].iloc[r],temp_t_series_df[pmc].iloc[r-1], \
+        #                (float(temp_t_series_df['milliseconds'].iloc[r])-float(temp_t_series_df['milliseconds'].iloc[r-1]))/1000.0)
+        #    new_pmc_df.append(row_dict,ignore_index=True)
+        
+        #for pmc in pmc_cols:
+        #    temp_t_series_df[pmc+' rate interp'] = temp_t_series_df
+    #print new_df
     new_df.to_csv(
         os.path.join(output_filepath), 
         sep='\t'
         )
-
+    time_series_df.to_csv(
+        output_filepath+'-time-series.csv',
+        sep='\t'
+        )
 
 def consolidate_iterations(files_list):
     # This method takes the postprocessed iteration files,
@@ -256,7 +376,7 @@ def combine_pmc_runs(pmc_files):
     return combined_df
 
 
-def postprocess_new_sytle_experiments(experiment_top_dir):
+def postprocess_new_sytle_experiments(experiment_top_dir,temperature_file=None):
     import os
     import pandas as pd
     pmc_dirs  = [x for x in os.listdir(experiment_top_dir)
@@ -290,7 +410,7 @@ def postprocess_new_sytle_experiments(experiment_top_dir):
             print("Working on iteration: "+str(current_iter_dir))
             # first process each of the iterations, and then combine them
             iteration_postprocessed_filename = os.path.join(current_iter_dir, 'postprocessed.csv')
-            postprocess_experiment(current_iter_dir, iteration_postprocessed_filename)
+            postprocess_experiment(current_iter_dir, iteration_postprocessed_filename,temperature_file=temperature_file)
             iteration_files_to_consolidate.append(iteration_postprocessed_filename)
         combined_iterations_df = consolidate_iterations(iteration_files_to_consolidate)
         combined_iterations_df.to_csv(os.path.join(current_pmc_dir, 'consolidated-iterations.csv'), sep='\t')
@@ -313,6 +433,9 @@ if __name__ == "__main__":
             required=True, \
             help='The path to the experiment directory to analyse, ' \
             + 'e.g. "../powmon-experiment-000/"')
+    parser.add_argument('-t','--temperature-file', dest='temperature_file', \
+            required=False, \
+            help="Path to the file of ambient temperature logs")
     parser.add_argument('--elaborate-only', dest='elaborate_only', \
             required=False,action='store_true', \
             help='Only runs the final elaboration stage without re-running ' \
@@ -335,7 +458,7 @@ if __name__ == "__main__":
     if is_new_style_experiment:
         # go through discovering directories, consolidating etc. 
         if not args.elaborate_only:
-            postprocess_new_sytle_experiments(args.experiment_dir)
+            postprocess_new_sytle_experiments(args.experiment_dir,temperature_file=args.temperature_file)
         #elaborate(args.experiment_dir)
     else:
         if not args.elaborate_only:
