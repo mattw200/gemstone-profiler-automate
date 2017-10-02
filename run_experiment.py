@@ -193,7 +193,7 @@ def run_experiment(
                     with open('inner_shell.sh', 'w') as f:
                         f.write(inner_shell_text)
                     f.closed
-                    current_command = 'timeout '+str(int(workload_timeout))+' bash inner_shell.sh'
+                    current_command = 'timeout -s SIGKILL '+str(int(workload_timeout))+'s bash inner_shell.sh'
                 shell_text = '#!/usr/bin/env bash\n'
                 shell_text += 'echo "-------POWMON WORKLOAD: '+current_name \
                         +'" | tee -a '+owd+'/'+experiment_directory+'/'+FILENAME_PROGRAM_OUT+'\n'
@@ -278,11 +278,15 @@ def get_pmcs_to_run_over(pmcs_file, pmcs_cpu):
 if __name__ == "__main__":
     import argparse
     import sys
+    platforms = ['RPi3','O-XU3','O-C2']
     parser = argparse.ArgumentParser()
     parser.add_argument('-f', '--freq', dest='freq_mhz',  required=False, \
                   help='The frequency in MHz, e.g. -f 1000')
     parser.add_argument('-m', '--core-mask', dest='core_mask', required=False, \
                   help="The core mask, e.g. -m '0,1,2,3'")
+    parser.add_argument('-p', '--platform', dest='platform', required=True, \
+                  help="Specify the platform on which the experiment is run" \
+                  +". Available: "+str(platforms))
     parser.add_argument('-c', '--workloads-config', dest='workloads_config', \
                   required=True, \
                   help="The workload config file, e.g. -c 'workloads.config'")
@@ -306,7 +310,14 @@ if __name__ == "__main__":
                  +"that it runs for the exact time specified (seconds)" \
                  +" e.g. --workload-timeout 30 : runs workload for exactly " \
                  +" 30 seconds")
+    parser.add_argument('--label', dest='label', required=False, \
+                  help="If present, adds label to top experiment directory" )
     args=parser.parse_args()
+    if args.platform not in platforms:
+        print("Did not recognise the platform! ('-p') "\
+            +"Supported: "+str(platforms))
+        parser.print_help()
+        sys.exit()
     freq = 1000
     if args.freq_mhz:
         freq = args.freq_mhz
@@ -321,6 +332,7 @@ if __name__ == "__main__":
     args.iterations = int(args.iterations)
     if args.iterations % 2 == 0:
         print("iterations must be an odd number! (e.g. 1,3,5 or 7)")
+        parser.print_help()
         sys.exit()
     # derive experiment directory:
     # setup experiment directory
@@ -335,7 +347,10 @@ if __name__ == "__main__":
         f.write(str(experiment_num+1))
     f.closed
     experiment_directory = 'powmon-experiment-{0:0>3}'.format(experiment_num)
-
+    experiment_dir_label = '-p_'+args.platform+'-'+'c_'+core_mask.replace(',','_')+'-f_'+freq.replace(',','_')
+    if args.label:
+        experiment_dir_label += '-'+args.label.strip().replace(' ','_').replace('-','_')
+    experiment_directory += experiment_dir_label
     # check for PMCs
     if args.pmcs_file or args.pmcs_cpu:
         if args.pmcs_file and args.pmcs_cpu:

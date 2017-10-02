@@ -137,6 +137,20 @@ def postprocess_experiment(experiment_dir, output_filepath,temperature_file=None
         start_row = pmc_events_log_df[pmc_events_log_df['label'] == current_workload+' start']
         end_row = pmc_events_log_df[pmc_events_log_df['label'] == current_workload+' end']
         print ("Start row: "+str(start_row))
+        if len(end_row) < 1:
+            print("Error: could not find end row. Skipping this workload")
+            print("Press enter to continue")
+            raw_input()
+            continue
+        elif len(end_row) > 1:
+            print("Error: more than one end entry for the same workload! Skipping this workload")
+            print("Press enter to continue")
+            raw_input()
+            continue
+        elif len(start_row) > 1:
+            print("Error multiple start rows for same workload. Skipping")
+            print("Press enter to continue")
+            continue
         print ("debug: "+str(start_row['milliseconds']))
         start_time = long(start_row['milliseconds'])
         end_time = long(end_row['milliseconds'])
