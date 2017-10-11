@@ -179,7 +179,7 @@ def postprocess_experiment(experiment_dir, output_filepath,temperature_file=None
             print pmc_diff
             row_dict[pmc+' diff']=pmc_diff
             row_dict[pmc+' rate']=pmc_diff/delta_time
-            num_samples = len(pmc_vals)
+        num_samples = len(pmc_vals)
         # process temperature samples
         for t_col in temperature_cols:
             t_vals = []
@@ -238,6 +238,10 @@ def postprocess_experiment(experiment_dir, output_filepath,temperature_file=None
         temp_t_series_df = start_row[time_series_cols]
         temp_t_series_df = temp_t_series_df.append(continuous_df[time_series_cols],ignore_index=True)
         temp_t_series_df = temp_t_series_df.append(end_row[time_series_cols],ignore_index=True)
+        temp_t_series_df['workload specific'] = temp_t_series_df['label'].apply(lambda x: \
+                  temp_t_series_df['label'].iloc[0].replace(' start',''))
+        temp_t_series_df['workload group'] = temp_t_series_df['label'].apply(lambda x: \
+                  temp_t_series_df['label'].iloc[0].replace(' start','').replace('prelseep-','').replace('postsleep-','').replace('postslseep-',''))
         # pmcs in t_series:
         if temperature_file:
             temp_t_series_df['Ambient Temperature mean'] = temp_t_series_df['milliseconds'].apply( \

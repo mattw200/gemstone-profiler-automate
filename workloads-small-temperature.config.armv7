@@ -1,4 +1,5 @@
 Directory	Command	Name
+/home/odroid/Workloads-ARMv7/	sleep 30	idle-init
 /home/odroid/Workloads-ARMv7/	sleep 30	idle
 /home/odroid/Workloads-ARMv7/mibench-armv7/automotive/basicmath/	./basicmath_large > output_large.txt	basicmath
 /home/odroid/Workloads-ARMv7/mibench-armv7/automotive/bitcount/	./bitcnts 325000 > output_small.txt	bitcount-small

@@ -16,5 +16,7 @@ sudo ./powmon-scripts/run_experiment.py -m '0,1,2,3,4,5,6,7' -c powmon-scripts/w
 # RPI
 ./powmon-scripts/run_experiment.py -m '0,1,2,3' -c powmon-scripts/workloads-small-temperature.config.armv7 -f '1000' --pmcs-file powmon-scripts/pmcs-setup-tcad.txt --pmcs-cpu "Cortex-A53" --pre-sleep 180 --post-sleep 180 --workload-timeout 180
 
+# XU3 - A15
+./powmon-scripts/run_experiment.py -m '4,5,6,7' -c powmon-scripts/workloads-small-temperature.config.armv7 -f '1000,1000' --pmcs-file powmon-scripts/pmcs-setup-tcad.txt --pmcs-cpu "Cortex-A15" --pre-sleep 180 --post-sleep 180 --workload-timeout 180 --platform O-XU3 --label 'first-test'
 
-
+./powmon-scripts/run_experiment.py -m '4,5,6,7' -c powmon-scripts/workloads-small-temperature.config.armv7 -f '1000,1000' --pmcs-file powmon-scripts/pmcs-setup-tcad.txt --pmcs-cpu "Cortex-A15" --pre-sleep 180 --post-sleep 360 --workload-timeout 360 --platform O-XU3 --label 'first-third'

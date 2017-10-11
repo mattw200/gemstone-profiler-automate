@@ -19,9 +19,13 @@ FILENAME_PROGRAM_OUT = 'program-output.log'
 FILENAME_ARGS = 'command-line-args.txt'
 FILENAME_CORE_MASK_OUT = 'core-mask.txt'
 
-# PMC continuous collection sample period in microseconds (us)
-SAMPLE_PERIOD_US = 700000
+platforms = ['RPi3','O-XU3','O-C2']
 
+fan_mode_file = '/sys/devices/odroid_fan.14/fan_mode'
+fan_pwm_file = '/sys/devices/odroid_fan.14/pwm_duty'
+
+# PMC continuous collection sample period in microseconds (us)
+#SAMPLE_PERIOD_US = 700000
 
 cpu_ids = {
     'Cortex-A8' : '0x00',
@@ -43,7 +47,6 @@ cpu_num_counters = {
     'Cortex-A73' : 6
     }
 
-
 class ContinuousLogging(threading.Thread): 
     def __init__(self, threadID, experiment_directory, time_period_us):
         threading.Thread.__init__(self)
@@ -57,6 +60,20 @@ class ContinuousLogging(threading.Thread):
         print("Finished thread: "+str(self.threadID))
         print("Exiting as logging has stopped")
         sys.exit()
+
+def set_fan_pwm(platform,pwm):
+    if platform == 'O-XU3':
+        fan_mode_file = '/sys/devices/odroid_fan.14/fan_mode'
+        fan_pwm_file = '/sys/devices/odroid_fan.14/pwm_duty'
+        if int(pwm) >= 0 and int(pwm) <= 255:
+            os.system('echo 0 > '+fan_mode_file)
+            os.system('echo '+str(int(pwm))+' > '+fan_pwm_file)
+
+def reset_gov_and_fan():
+    print("Resetting Freq and Fan")
+    os.system('sudo cpufreq-set -g performance')
+    if os.path.isfile(fan_mode_file):
+        os.system('echo  1 > '+fan_mode_file)
 
 def set_frequency(freq_mhz):
     # New - freq_mhz can be list. divides every 4 by default
@@ -88,7 +105,8 @@ def run_experiment(
         iterations=1,
         pre_sleep=None,
         post_sleep=None,
-        workload_timeout=None
+        workload_timeout=None,
+        sample_time_us=700000
         ):
     import time
     import datetime
@@ -122,7 +140,7 @@ def run_experiment(
             os.system('bin/pmc-setup '+pmc_config_filename)
         os.system('bin/pmc-get-header > '+experiment_directory \
                 +'/'+FILENAME_PMC_EVENTS_LOG)
-        loggingThread = ContinuousLogging(0, experiment_directory, SAMPLE_PERIOD_US)
+        loggingThread = ContinuousLogging(0, experiment_directory, sample_time_us)
         loggingThread.start()
         #os.system('bin/pmc-get-header > '+experiment_directory+'/pmc-log.out')
         set_frequency(freq_mhz)
@@ -219,7 +237,7 @@ def run_experiment(
                 f.closed
                 if post_sleep:
                     post_sleep_command = 'sleep '+str(int(post_sleep))
-                    post_sleep_name = 'postslseep-'+current_name
+                    post_sleep_name = 'postsleep-'+current_name
                     post_sleep_shell_text = '#!/usr/bin/env bash\n'
                     post_sleep_shell_text += 'echo "-------POWMON WORKLOAD: '+post_sleep_name \
                             +'" | tee -a '+owd+'/'+experiment_directory+'/'+FILENAME_PROGRAM_OUT+'\n'
@@ -278,10 +296,11 @@ def get_pmcs_to_run_over(pmcs_file, pmcs_cpu):
 if __name__ == "__main__":
     import argparse
     import sys
-    platforms = ['RPi3','O-XU3','O-C2']
     parser = argparse.ArgumentParser()
     parser.add_argument('-f', '--freq', dest='freq_mhz',  required=False, \
                   help='The frequency in MHz, e.g. -f 1000')
+    parser.add_argument('-s', '--sample-t-us', dest='sample_time_us', required=False, \
+                  help='Sample time (microseconds), integer only. Default: 700000')
     parser.add_argument('-m', '--core-mask', dest='core_mask', required=False, \
                   help="The core mask, e.g. -m '0,1,2,3'")
     parser.add_argument('-p', '--platform', dest='platform', required=True, \
@@ -312,12 +331,21 @@ if __name__ == "__main__":
                  +" 30 seconds")
     parser.add_argument('--label', dest='label', required=False, \
                   help="If present, adds label to top experiment directory" )
+    parser.add_argument('--fan-pwm', dest='fan_pwm', required=False, \
+                  help="Sets fan PWM (if device supported)")
+    parser.add_argument('--set-gov-fan', dest='set_gov_fan', action='store_true', required=False, \
+                  help="Just sets the gov and fan, if applicable, to performance and auto" )
     args=parser.parse_args()
+    if args.set_gov_fan:
+        reset_gov_and_fan()
+        sys.exit()
     if args.platform not in platforms:
         print("Did not recognise the platform! ('-p') "\
             +"Supported: "+str(platforms))
         parser.print_help()
         sys.exit()
+    if args.fan_pwm:
+        set_fan_pwm(args.platform,args.fan_pwm)
     freq = 1000
     if args.freq_mhz:
         freq = args.freq_mhz
@@ -403,7 +431,8 @@ if __name__ == "__main__":
                         iterations=args.iterations,
                         pre_sleep=args.pre_sleep,
                         post_sleep=args.post_sleep,
-                        workload_timeout=args.workload_timeout
+                        workload_timeout=args.workload_timeout,
+                        sample_time_us=args.sample_time_us
                         )
         else:
             print("If specifying PMCs, both --pmcs-file and --pmcs-cpu " \
@@ -412,3 +441,4 @@ if __name__ == "__main__":
             sys.exit()
     else:
         run_experiment(experiment_directory,freq, core_mask, args.workloads_config, command_args_text, iterations=args.iterations,pre_sleep=args.pre_sleep,post_sleep=args.post_sleep,workload_timeout=args.workload_timeout)
+    reset_gov_and_fan()
