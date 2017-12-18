@@ -19,7 +19,7 @@ FILENAME_PROGRAM_OUT = 'program-output.log'
 FILENAME_ARGS = 'command-line-args.txt'
 FILENAME_CORE_MASK_OUT = 'core-mask.txt'
 
-platforms = ['RPi3','O-XU3','O-C2']
+platforms = ['RPi3','O-XU3','O-C2','NA']
 
 fan_mode_file = '/sys/devices/odroid_fan.14/fan_mode'
 fan_pwm_file = '/sys/devices/odroid_fan.14/pwm_duty'
@@ -205,7 +205,7 @@ def run_experiment(
                     #current_command = 'timeout '+str(workload_timeout)+ \
                     #        '  while true; do '+current_command+'; done  '
                     # Do repeats:
-                    # taskset -c 4,5,6,7 $(while true; do ./basicmath_large > output_large.txt; done) |& tee -a /home/odroid/temperature/powmon-pmc-armv8/powmon-experiment-013/pmc-run-02-0x11-0x12-0x13-0x14-0x15-0x16/iteration-00/program-output.log
+                    # taskset -c 4,5,6,7 $(while true; do ./basicmath_large > output_large.txt; done) |& tee -a /home/odroid/temperature/gemstone-pmc-armv8/gemstone-experiment-013/pmc-run-02-0x11-0x12-0x13-0x14-0x15-0x16/iteration-00/program-output.log
                     inner_command = '$(while true; do '+current_command+'; done)'
                     inner_shell_text = '#!/usr/bin/env bash\n'+inner_command+'\n'
                     with open('inner_shell.sh', 'w') as f:
@@ -300,7 +300,8 @@ if __name__ == "__main__":
     parser.add_argument('-f', '--freq', dest='freq_mhz',  required=False, \
                   help='The frequency in MHz, e.g. -f 1000')
     parser.add_argument('-s', '--sample-t-us', dest='sample_time_us', required=False, \
-                  help='Sample time (microseconds), integer only. Default: 700000')
+                  help='Sample time (microseconds), integer only. ', \
+                  default=7000000)
     parser.add_argument('-m', '--core-mask', dest='core_mask', required=False, \
                   help="The core mask, e.g. -m '0,1,2,3'")
     parser.add_argument('-p', '--platform', dest='platform', required=True, \
@@ -374,7 +375,7 @@ if __name__ == "__main__":
     with open(experiment_number_path, 'w') as f:
         f.write(str(experiment_num+1))
     f.closed
-    experiment_directory = 'powmon-experiment-{0:0>3}'.format(experiment_num)
+    experiment_directory = 'gemstone-experiment-{0:0>3}'.format(experiment_num)
     experiment_dir_label = '-p_'+args.platform+'-'+'c_'+core_mask.replace(',','_')+'-f_'+freq.replace(',','_')
     if args.label:
         experiment_dir_label += '-'+args.label.strip().replace(' ','_').replace('-','_')
@@ -441,4 +442,6 @@ if __name__ == "__main__":
             sys.exit()
     else:
         run_experiment(experiment_directory,freq, core_mask, args.workloads_config, command_args_text, iterations=args.iterations,pre_sleep=args.pre_sleep,post_sleep=args.post_sleep,workload_timeout=args.workload_timeout)
+    print("END OF SCRIPT ('experiment directory: "+experiment_directory+")")
+    print("Just tidying up now:")
     reset_gov_and_fan()
