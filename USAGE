@@ -20,3 +20,15 @@ sudo ./powmon-scripts/run_experiment.py -m '0,1,2,3,4,5,6,7' -c powmon-scripts/w
 ./powmon-scripts/run_experiment.py -m '4,5,6,7' -c powmon-scripts/workloads-small-temperature.config.armv7 -f '1000,1000' --pmcs-file powmon-scripts/pmcs-setup-tcad.txt --pmcs-cpu "Cortex-A15" --pre-sleep 180 --post-sleep 180 --workload-timeout 180 --platform O-XU3 --label 'first-test'
 
 ./powmon-scripts/run_experiment.py -m '4,5,6,7' -c powmon-scripts/workloads-small-temperature.config.armv7 -f '1000,1000' --pmcs-file powmon-scripts/pmcs-setup-tcad.txt --pmcs-cpu "Cortex-A15" --pre-sleep 180 --post-sleep 360 --workload-timeout 360 --platform O-XU3 --label 'first-third'
+
+
+
+
+USAGE - Tutorial
+----------------
+200-1400 (A15)
+From the gemstone-profiler-logger/ directory (cd ..):
+sudo ./gemstone-profiler-automate/run_experiment.py -p 'O-XU3' -m '4,5,6,7' -c gemstone-profiler-automate/workloads-small.config.armv7 -f '200,1400' --pmcs-file gemstone-profiler-automate/pmcs-setup.txt --pmcs-cpu "Cortex-A15" --iterations 5
+
+
+
