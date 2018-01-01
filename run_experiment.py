@@ -301,7 +301,7 @@ if __name__ == "__main__":
                   help='The frequency in MHz, e.g. -f 1000')
     parser.add_argument('-s', '--sample-t-us', dest='sample_time_us', required=False, \
                   help='Sample time (microseconds), integer only. ', \
-                  default=7000000)
+                  default=700000)
     parser.add_argument('-m', '--core-mask', dest='core_mask', required=False, \
                   help="The core mask, e.g. -m '0,1,2,3'")
     parser.add_argument('-p', '--platform', dest='platform', required=True, \
