@@ -7,7 +7,7 @@
 def get_experiment_number_from_full_directory_path(path):
     import os
     dir_name =  os.path.basename(os.path.normpath(path))
-    if dir_name.startswith('powmon-experiment-'):
+    if dir_name.startswith('powmon-experiment-') or dir_name.startswith('gemstone-experiment-'):
         return int(dir_name.split('-')[2])
     else:
         return None
@@ -85,5 +85,5 @@ if __name__=='__main__':
     ordered_cols += [x for x in cols if x not in ordered_cols]
     print("Number of columns in ordered_cols: "+str(len(ordered_cols)))
     combined_df = combined_df[ordered_cols]
-    combined_df.to_csv(os.path.join(args.directory,'xu3-combined.csv'),sep='\t')
+    combined_df.to_csv(os.path.join(args.directory,'hw-combined.csv'),sep='\t')
 
