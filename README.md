@@ -9,7 +9,7 @@ It executes a set of given workloads on any specified core mask and CPU frequenc
 
 More details available at [GemStone](http://gemstone.ecs.soton.ac.uk)
 
-This project works alongside [GemStone-Profiler Logger](http://gemstone.ecs.soton.ac.uk), 
+This project works alongside [GemStone-Profiler Logger](https://github.com/mattw200/gemstone-profiler-logger), 
 which handles the logging of PMCs and other variables 
 from the device under test. 
 
