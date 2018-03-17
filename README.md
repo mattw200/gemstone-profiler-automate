@@ -21,7 +21,7 @@ from the device under test.
 
 ## Getting Started
 
-For usage instructions, check out the tutorials at [GemStone](http://gemstone.ecs.soton.ac.uk).
+For detailed usage instructions, check out the [GemStone Profiler Automate Tutorial](http://gemstone.ecs.soton.ac.uk/gemstone-website/gemstone/tutorial-gemstone-profiler-automate.html).
 
 ## Authors
 
